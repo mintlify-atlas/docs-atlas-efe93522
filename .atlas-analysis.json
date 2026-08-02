@@ -1,0 +1,90 @@
+{
+  "projectType": "general",
+  "projectName": "Advent of Code Solutions",
+  "projectDescription": "A comprehensive Python repository containing cj81499's solutions to Advent of Code puzzles from 2015 through 2025, with a shared utility library, full test coverage, and pre-commit quality tooling.",
+  "theme": "palm",
+  "primaryColor": "#f6af42",
+  "lightColor": "#7c541c",
+  "darkColor": "#171116",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Overview",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/setup",
+              "development/testing",
+              "development/tooling"
+            ]
+          },
+          {
+            "group": "Solution Structure",
+            "pages": [
+              "structure/overview",
+              "structure/utility-library"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Solutions by Year",
+        "groups": [
+          {
+            "group": "Recent Years",
+            "pages": [
+              "solutions/2025",
+              "solutions/2024",
+              "solutions/2023",
+              "solutions/2022"
+            ]
+          },
+          {
+            "group": "Earlier Years",
+            "pages": [
+              "solutions/2021",
+              "solutions/2020",
+              "solutions/2019",
+              "solutions/2018",
+              "solutions/2017",
+              "solutions/2016",
+              "solutions/2015"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Solutions spanning Advent of Code 2015–2025 (11 years)",
+    "Shared `aoc_cj.util` library with grid helpers, data parsers, and priority queue",
+    "Full pytest test suite with example-input coverage",
+    "Integration with `advent-of-code-data` (aocd) for fetching puzzle inputs",
+    "Strict type checking with mypy and formatting/linting with Ruff",
+    "Pre-commit hooks enforcing code quality on every commit",
+    "CI via GitHub Actions (Python 3.13 & 3.14, codecov, zizmor security analysis)"
+  ],
+  "publicApiSurface": [
+    "aoc_cj.solve(year, day, data) -> tuple[Answer, Answer]",
+    "aoc_cj.util.adj_4(p: complex) -> Generator[complex]",
+    "aoc_cj.util.adj_8(p: complex) -> Generator[complex]",
+    "aoc_cj.util.clamp(n, min_n, max_n) -> int",
+    "aoc_cj.util.is_prime(n) -> bool",
+    "aoc_cj.util.ints(s) -> Generator[int]",
+    "aoc_cj.util.digits(s) -> Generator[int]",
+    "aoc_cj.util.floats(s) -> Generator[float]",
+    "aoc_cj.util.create_regex_parser(pattern, converter) -> Callable",
+    "aoc_cj.util.Point3D — frozen dataclass with parse(), adj()",
+    "aoc_cj.util.PriorityQueue[T] — generic min-heap with push/pop/pop_with_priority",
+    "aoc_cjYYYY.dayDD.part_1(txt: str) -> int | str | None",
+    "aoc_cjYYYY.dayDD.part_2(txt: str) -> int | str | None"
+  ]
+}

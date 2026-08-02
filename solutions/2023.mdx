@@ -1,0 +1,99 @@
+---
+title: "Advent of Code 2023 Solutions"
+sidebarTitle: "2023"
+description: "Python solutions for Advent of Code 2023 by cj81499, covering 22 days with a variety of grid, parsing, and graph problems."
+---
+
+Advent of Code 2023 was a strong year for cj81499, with **22 days** fully completed (both parts), one day with only Part 1 solved (Day 23 — A Long Walk), and one day with only Part 1 (Day 25 — Snowverload). Days 20–22 remain unsolved. The puzzles span a rich variety of problem types: range-interval algebra, pipe-grid flood-fill, hand-ranking card games, polynomial extrapolation, and constraint-solving with an SMT solver.
+
+<Note>
+  Puzzle inputs are personal and are not included in the repository. To run
+  these solutions you will need to supply your own input, for example via
+  [aocd](https://github.com/wimglenn/advent-of-code-data). See
+  [Solution Structure](/structure/overview) for how the project is organised.
+</Note>
+
+## Progress Table
+
+| Day | Title | Part 1 | Part 2 | Tests |
+|:---:|-------|:------:|:------:|:-----:|
+| 01 | [Trebuchet?!](https://adventofcode.com/2023/day/1) | ⭐ | ⭐ | ✅ |
+| 02 | [Cube Conundrum](https://adventofcode.com/2023/day/2) | ⭐ | ⭐ | ✅ |
+| 03 | [Gear Ratios](https://adventofcode.com/2023/day/3) | ⭐ | ⭐ | ✅ |
+| 04 | [Scratchcards](https://adventofcode.com/2023/day/4) | ⭐ | ⭐ | ✅ |
+| 05 | [If You Give A Seed A Fertilizer](https://adventofcode.com/2023/day/5) | ⭐ | ⭐ | ✅ |
+| 06 | [Wait For It](https://adventofcode.com/2023/day/6) | ⭐ | ⭐ | ✅ |
+| 07 | [Camel Cards](https://adventofcode.com/2023/day/7) | ⭐ | ⭐ | ✅ |
+| 08 | [Haunted Wasteland](https://adventofcode.com/2023/day/8) | ⭐ | ⭐ | ✅ |
+| 09 | [Mirage Maintenance](https://adventofcode.com/2023/day/9) | ⭐ | ⭐ | ✅ |
+| 10 | [Pipe Maze](https://adventofcode.com/2023/day/10) | ⭐ | ⭐ | ✅ |
+| 11 | [Cosmic Expansion](https://adventofcode.com/2023/day/11) | ⭐ | ⭐ | ✅ |
+| 12 | [Hot Springs](https://adventofcode.com/2023/day/12) | ⭐ | ⭐ | ✅ |
+| 13 | [Point of Incidence](https://adventofcode.com/2023/day/13) | ⭐ | ⭐ | ✅ |
+| 14 | [Parabolic Reflector Dish](https://adventofcode.com/2023/day/14) | ⭐ | ⭐ | ✅ |
+| 15 | [Lens Library](https://adventofcode.com/2023/day/15) | ⭐ | ⭐ | ✅ |
+| 16 | [The Floor Will Be Lava](https://adventofcode.com/2023/day/16) | ⭐ | ⭐ | ✅ |
+| 17 | [Clumsy Crucible](https://adventofcode.com/2023/day/17) | ⭐ | ⭐ | ✅ |
+| 18 | [Lavaduct Lagoon](https://adventofcode.com/2023/day/18) | ⭐ | ⭐ | ✅ |
+| 19 | [Aplenty](https://adventofcode.com/2023/day/19) | ⭐ | ⭐ | ✅ |
+| 20 | [?](https://adventofcode.com/2023/day/20) | ❓ | ❓ | ❓ |
+| 21 | [?](https://adventofcode.com/2023/day/21) | ❓ | ❓ | ❓ |
+| 22 | [?](https://adventofcode.com/2023/day/22) | ❓ | ❓ | ❓ |
+| 23 | [A Long Walk](https://adventofcode.com/2023/day/23) | ⭐ | ❓ | ✅ |
+| 24 | [Never Tell Me The Odds](https://adventofcode.com/2023/day/24) | ⭐ | ⭐ | ✅ |
+| 25 | [Snowverload](https://adventofcode.com/2023/day/25) | ⭐ | ✗ | ✅ |
+
+## Notable Solutions
+
+### Day 5 — If You Give A Seed A Fertilizer
+
+**Part 1** maps individual seed numbers through a chain of almanac maps. Each
+map is a list of `MappingRange` entries described by a destination range start,
+source range start, and length. A value falls through unchanged when no range
+covers it.
+
+**Part 2** reinterprets the seed list as (start, length) pairs, producing
+millions of seeds — too many to enumerate directly. The solution instead
+propagates *ranges* through each map layer. For every input range it finds the
+intersection with each `MappingRange`, converts the overlapping sub-range
+wholesale by offsetting it, and queues the non-overlapping remainders (computed
+with a `range_difference` helper) for further matching within the same map
+layer. This keeps the working set to a handful of `range` objects regardless of
+how large the seed spans are, reducing an overnight brute-force into a
+millisecond interval sweep.
+
+---
+
+### Day 10 — Pipe Maze
+
+**Part 1** locates the single closed loop of pipe tiles starting from `S` using
+a straightforward BFS that respects each pipe character's connection directions
+(`|`, `-`, `L`, `J`, `7`, `F`). The answer is the maximum BFS distance —
+i.e. the point farthest from the start along the loop.
+
+**Part 2** counts tiles *enclosed* by the loop. Rather than ray-casting through
+grid cells (which breaks at corner sequences), the solution floods the *corners*
+of grid cells — the lattice points between tiles. Starting from the top-left
+corner of `(0, 0)`, a BFS propagates through corners, but can only cross between
+two adjacent loop tiles if those tiles are **not** connected to each other (the
+`can_flood` check). After flooding, any grid cell whose four corners were all
+unreachable by the flood is interior to the loop. This elegantly handles all
+pipe-corner ambiguities without special-casing.
+
+---
+
+### Day 24 — Never Tell Me The Odds
+
+**Part 1** intersects hailstone trajectories in the XY-plane analytically.
+Each hailstone's path is converted to slope-intercept form (`y = mx + b`), then
+pairs of hailstones are checked for a forward-time intersection within the
+specified bounding box.
+
+**Part 2** asks for the starting position and velocity of a rock that collides
+with *every* hailstone. This is an underdetermined-looking system, but with
+enough hailstones it is fully determined. The solution uses the
+[z3](https://github.com/Z3Prover/z3) SMT solver: it declares six real-valued
+unknowns (`px, py, pz, vx, vy, vz`) and, for each hailstone, adds a collision
+constraint parameterised by a per-hailstone time variable `t`. Three hailstones
+are sufficient to fix the solution; z3 returns the unique satisfying model and
+the answer is `px + py + pz`.

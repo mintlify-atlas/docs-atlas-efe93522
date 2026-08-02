@@ -1,0 +1,130 @@
+---
+title: "Testing AoC Solutions with pytest and aocd"
+sidebarTitle: "Testing"
+description: "Run the pytest test suite, use the aocd test runner to verify solutions against multiple inputs, and understand how slow tests are marked and filtered."
+---
+
+Every solved puzzle in `aoc-cj` is accompanied by a test file in `tests/aocYYYY/` that verifies the `part_1` and `part_2` functions against the example inputs printed in the problem statement. This approach gives fast, deterministic feedback without requiring a live AoC session token — the example inputs are embedded directly in the test files as string literals.
+
+## Running Tests
+
+Run the full test suite with:
+
+```bash title="Run tests"
+uv run pytest
+```
+
+The `[tool.pytest]` section in `pyproject.toml` configures pytest with sensible defaults:
+
+```toml title="pyproject.toml"
+[tool.pytest]
+# skip slow tests by default
+addopts = ["-m", "not slow"]
+markers = ["slow: marks tests as slow"]
+strict_xfail = true
+```
+
+By default, tests decorated with `@pytest.mark.slow` are excluded from every run. Pass `-m slow` to run only the slow tests, or `-m ""` to run all tests regardless of mark.
+
+## Test File Naming Convention
+
+Test files follow a consistent naming pattern: `tests/aoc{YYYY}/y{YYYY}d{DD}_test.py`. Each file imports the corresponding solution module, defines an `EXAMPLE_INPUT` string, and contains one test function per part.
+
+Here is the real test file for [Advent of Code 2024 Day 1](https://adventofcode.com/2024/day/1):
+
+```python title="tests/aoc2024/y2024d01_test.py"
+import aoc_cj.aoc2024.day01 as d
+
+EXAMPLE_INPUT = """
+3   4
+4   3
+2   5
+1   3
+3   9
+3   3
+""".strip()
+
+
+def test_part_1() -> None:
+    assert d.part_1(EXAMPLE_INPUT) == 11
+
+
+def test_part_2() -> None:
+    assert d.part_2(EXAMPLE_INPUT) == 31
+```
+
+The pattern is identical across all years:
+
+1. Import the day's module with a short alias (`d`).
+2. Define `EXAMPLE_INPUT` as a stripped multi-line string taken from the problem statement.
+3. Write `test_part_1()` and `test_part_2()` functions that call the solution and assert the expected example answer.
+
+## AoC Test Runner
+
+`aoc-cj` registers itself as an `adventofcode.user` entry point so that the [`aocd` test runner](https://github.com/wimglenn/advent-of-code-data#verify-your-code-against-multiple-different-inputs) can dispatch puzzle inputs to the solution and compare the returned answers against the correct values stored by `aocd`.
+
+The entry point is declared in `pyproject.toml`:
+
+```toml title="pyproject.toml"
+[project.entry-points."adventofcode.user"]
+cj81499 = "aoc_cj:solve"
+```
+
+This maps the user handle `cj81499` to the `aoc_cj.solve` callable. With a valid session token configured, you can verify solutions against real inputs:
+
+```bash title="Run aocd test runner"
+uv run aoce --users cj81499 --years 2024 --days 1
+```
+
+<Note>
+  The `aoce` command requires a valid session token in `~/.config/aocd/token`. See the [Setup guide](/development/setup#configuring-the-aoc-session-token) for instructions on obtaining your token.
+</Note>
+
+## Slow Tests
+
+Some puzzles have computationally expensive example inputs — typically those involving MD5 hashing loops or other brute-force searches. These tests are decorated with `@pytest.mark.slow` and skipped by default.
+
+```python title="Example slow test (illustrative)"
+@pytest.mark.slow
+def test_part_1() -> None:
+    assert d.part_1(EXAMPLE_INPUT) == "abc..."
+```
+
+<CodeGroup>
+```bash title="Run only slow tests"
+uv run pytest -m slow
+```
+
+```bash title="Run all tests (including slow)"
+uv run pytest -m ""
+```
+</CodeGroup>
+
+## Watch Mode
+
+`pytest-watcher` re-runs pytest automatically whenever a Python file or `pyproject.toml` changes — useful while actively working on a solution:
+
+```bash title="Start watch mode"
+uv run pytest-watcher
+```
+
+The watcher is configured in `pyproject.toml`:
+
+```toml title="pyproject.toml"
+[tool.pytest-watcher]
+now = true
+clear = true
+patterns = ["*.py", "pyproject.toml"]
+```
+
+`now = true` means the test suite runs immediately on startup before waiting for the first file change. `clear = true` clears the terminal between runs.
+
+## Coverage
+
+To measure test coverage and produce an XML report (the format expected by Codecov):
+
+```bash title="Run tests with coverage"
+uv run pytest --cov=. --cov-report=xml
+```
+
+Coverage is configured in `pyproject.toml` with branch coverage enabled and a set of common patterns excluded from the report (such as `if __name__ == "__main__":` guards and `raise NotImplementedError` stubs). In CI, the resulting `coverage.xml` is uploaded to [Codecov](https://codecov.io/gh/cj81499/advent-of-code) automatically.

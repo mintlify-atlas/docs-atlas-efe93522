@@ -1,47 +1,155 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Get Started with AoC Solutions"
+sidebarTitle: "Quickstart"
+description: "Clone the repository, install uv, sync dependencies, configure your AOC session token, and run your first Advent of Code solution in under five minutes."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
+This guide walks you through everything you need to run cj81499's Advent of Code solutions locally. You will need **Python 3.13 or later**, the [uv](https://docs.astral.sh/uv/) package manager, and an active [Advent of Code](https://adventofcode.com/) account so that the `aocd` library can fetch your personal puzzle inputs automatically.
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+
+  <Step title="Install uv">
+    [uv](https://docs.astral.sh/uv/) is a fast Python package and project manager written in Rust. It replaces pip, virtualenv, and pyenv in a single tool and is the only dependency you need to install manually.
 
     ```bash
-    npm install your-package
+    curl -LsSf https://astral.sh/uv/install.sh | sh
     ```
-  </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+
+    After installation, restart your shell (or run `source $HOME/.local/bin/env`) so that the `uv` command is on your `PATH`. Verify with:
 
     ```bash
-    your-cli init
+    uv --version
     ```
+
+    Full installation docs are at [docs.astral.sh/uv](https://docs.astral.sh/uv/).
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+
+  <Step title="Clone the repository">
+    Clone the repository from GitHub and change into the project directory:
 
     ```bash
-    your-cli start
+    git clone https://github.com/cj81499/advent-of-code.git && cd advent-of-code
+    ```
+
+    The repository root contains `pyproject.toml`, which describes the `aoc-cj` package and all its dependencies. No additional configuration files are needed.
+  </Step>
+
+  <Step title="Sync dependencies">
+    Install the project and all its dependencies into a managed virtual environment:
+
+    ```bash
+    uv sync
+    ```
+
+    <Note>
+      You can skip this step entirely — `uv run` creates and syncs the environment automatically the first time you run any command. `uv sync` is useful when you want to pre-warm the environment or inspect it with an IDE.
+    </Note>
+
+    After syncing, uv places the virtualenv at `.venv/` in the project root. The environment includes all runtime dependencies (`networkx`, `numpy`, `z3-solver`, etc.) as well as the dev group (`mypy`, `pytest`, `ruff`, and friends).
+  </Step>
+
+  <Step title="Configure your AOC session token">
+    Puzzle inputs on Advent of Code are user-specific — the `aocd` library fetches them automatically using your browser session cookie. Place your token in the expected location:
+
+    ```bash
+    mkdir -p ~/.config/aocd
+    echo "YOUR_SESSION_TOKEN_HERE" > ~/.config/aocd/token
+    ```
+
+    If you would rather let `aocd` scrape the token directly from your browser's cookie storage, run:
+
+    ```bash
+    uv run --with browser-cookie3 aocd-token
+    ```
+
+    This command temporarily adds the `browser-cookie3` package and runs the `aocd-token` scraper, which reads the `session` cookie from supported browsers (Chrome, Firefox, etc.) and writes it to `~/.config/aocd/token` for you.
+
+    To find your token manually, log in to [adventofcode.com](https://adventofcode.com/), open your browser's developer tools, navigate to **Application → Cookies**, and copy the value of the `session` cookie.
+
+    <Note>
+      Puzzle input files are **not** included in this repository — Advent of Code's rules prohibit redistributing inputs. The `aocd` library fetches and caches your personal inputs on demand using the session token. Once fetched, inputs are cached locally so you don't hit the AoC servers on every run.
+    </Note>
+  </Step>
+
+  <Step title="Run a solution">
+    Each day module has an `if __name__ == '__main__':` block that fetches your input via `aocd` and prints both answers. For example, to run the 2024 Day 1 solution:
+
+    ```bash
+    uv run python -m aoc_cj.aoc2024.day01
+    ```
+
+    Expected output (with your personal input):
+
+    ```
+    part_1: 2344935
+    part_2: 27647262
+    ```
+
+    To run the **full test suite** and verify all solved puzzles against their expected answers:
+
+    ```bash
+    uv run pytest
+    ```
+
+    To run tests with coverage reporting:
+
+    ```bash
+    uv run pytest --cov=. --cov-report=term-missing
     ```
   </Step>
+
 </Steps>
 
 <Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+  Install the pre-commit hooks to automatically run Ruff formatting, Ruff linting, and mypy on every commit:
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
+  ```bash
+  uv run pre-commit install
+  ```
+
+  This mirrors what GitHub Actions runs in CI, so you catch issues before they reach the remote. The hooks are configured via `.pre-commit-config.yaml` in the repository root and run with zero extra setup thanks to uv's environment management.
 </Tip>
+
+## What a Solution Module Looks Like
+
+Every day follows the same pattern: a `parse()` helper, a `part_1()` function, an optional `part_2()` function, and a `__main__` block. Here is the complete source for **2024 Day 1** (`src/aoc_cj/aoc2024/day01.py`):
+
+```python
+import collections
+
+
+def parse(txt: str) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    ints_by_line = (tuple(int(x) for x in line.split()) for line in txt.splitlines())
+    transpose: zip[tuple[int, ...]] = zip(*ints_by_line)
+    tup = tuple(transpose)
+    assert len(tup) == 2
+    return tup
+
+
+def part_1(txt: str) -> int:
+    left_col, right_col = parse(txt)
+    return sum(abs(l - r) for l, r in zip(sorted(sorted(left_col)), sorted(sorted(right_col))))
+
+
+def part_2(txt: str) -> int:
+    left_col, right_col = parse(txt)
+    right_counts = collections.Counter(right_col)
+
+    return sum(l * right_counts[l] for l in left_col)
+
+
+if __name__ == "__main__":
+    import aocd
+
+    print(f"part_1: {part_1(aocd.data)}")
+    print(f"part_2: {part_2(aocd.data)}")
+```
+
+Notice the consistent interface:
+
+- **`parse(txt: str)`** — converts the raw puzzle input string into a convenient data structure.
+- **`part_1(txt: str) -> int`** — receives the raw input text (not the parsed form) and returns the answer. This makes each function independently testable.
+- **`part_2(txt: str) -> int`** — same signature as `part_1`.
+- **`__main__` block** — uses `aocd.data` to fetch the current day's input (determined from the module's position in the `aoc{YEAR}/day{DD}.py` path) and prints results directly.
+
+The top-level `aoc_cj.solve(year, day, data)` function calls `part_1` and `part_2` dynamically, which is how the `aocd` test runner and CI both exercise every solution.

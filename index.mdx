@@ -1,20 +1,62 @@
 ---
-title: "Introduction"
-description: "Welcome to your project"
+title: "Advent of Code Solutions by cj81499"
+sidebarTitle: "Home"
+description: "Python solutions for Advent of Code puzzles from 2015 through 2025, with a shared utility library, full test coverage, and strict type checking."
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+Welcome to **cj81499's Advent of Code solutions** — a well-structured Python monorepo covering puzzle solutions from 2015 all the way through 2025. Every solution is tested against the official example inputs, fully type-checked with mypy, and linted with Ruff. A shared `aoc_cj.util` library provides reusable grid helpers, input parsers, and data structures that appear across many years.
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+<CardGroup cols={2}>
+  <Card title="Introduction" icon="star" href="/introduction">
+    Learn what this repository contains and how it is organized.
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Clone the repo, install dependencies, and run your first solution in minutes.
+  </Card>
+  <Card title="Utility Library" icon="wrench" href="/structure/utility-library">
+    Explore the shared helpers for grids, parsing, and data structures.
+  </Card>
+  <Card title="Solutions by Year" icon="calendar" href="/solutions/2025">
+    Browse solved puzzles year by year from 2015 to 2025.
+  </Card>
+</CardGroup>
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+## What's Inside
+
+<CardGroup cols={3}>
+  <Card title="11 Years of Solutions" icon="trophy">
+    From AoC 2015 through 2025 — over 250 daily puzzle solutions across 11 event years.
+  </Card>
+  <Card title="Shared Utility Library" icon="box">
+    `aoc_cj.util` exports grid adjacency helpers, numeric parsers, `Point3D`, and a generic `PriorityQueue`.
+  </Card>
+  <Card title="Full Test Coverage" icon="check">
+    Every solved puzzle has a pytest test verified against the official example inputs from the problem statement.
+  </Card>
+  <Card title="Strict Type Checking" icon="shield">
+    All source files pass mypy in strict mode — no untyped functions, no implicit `Any`.
+  </Card>
+  <Card title="Modern Tooling" icon="gear">
+    Uses `uv` for fast dependency management and `pre-commit` hooks enforcing Ruff format and lint on every commit.
+  </Card>
+  <Card title="CI / CD" icon="circle-check">
+    GitHub Actions runs tests on Python 3.13 and 3.14, uploads coverage to Codecov, and runs zizmor security analysis.
+  </Card>
+</CardGroup>
+
+## Quick Navigation
+
+<CardGroup cols={2}>
+  <Card title="Development Setup" icon="laptop-code" href="/development/setup">
+    Install uv, sync dependencies, and configure your AOC session token.
+  </Card>
+  <Card title="Running Tests" icon="flask" href="/development/testing">
+    Run the full test suite or target a specific year with pytest.
+  </Card>
+  <Card title="Solution Structure" icon="folder-open" href="/structure/overview">
+    Understand the `src/aoc_cj/` layout and the per-day module convention.
+  </Card>
+  <Card title="Tooling & CI" icon="screwdriver-wrench" href="/development/tooling">
+    Learn about Ruff, mypy, pre-commit hooks, and the GitHub Actions workflow.
+  </Card>
+</CardGroup>

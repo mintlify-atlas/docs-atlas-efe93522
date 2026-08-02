@@ -1,0 +1,55 @@
+---
+title: "Advent of Code 2018 Solutions"
+sidebarTitle: "2018"
+description: "Python solutions for Advent of Code 2018 by cj81499, covering all 25 days with tested, type-checked implementations."
+---
+
+Advent of Code 2018 is a complete year — **all 25 days solved**, both parts. The year follows the Elves through time-travel mishaps featuring fabric-claim disputes, guard-sleep schedules, marble games, mine-cart collisions, Elf combat, and a register-based virtual machine. Day 1 Part 2 and Day 19 Part 1 both earned global leaderboard scores. Nearly every solution carries a full test suite.
+
+## Progress
+
+| Day | Title | Part 1 | Part 2 | Tests |
+|:---:|-------|:------:|:------:|:-----:|
+| 01 | [Chronal Calibration](https://adventofcode.com/2018/day/1) | ⭐ | ⭐ | ✅ |
+| 02 | [Inventory Management System](https://adventofcode.com/2018/day/2) | ⭐ | ⭐ | ✅ |
+| 03 | [No Matter How You Slice It](https://adventofcode.com/2018/day/3) | ⭐ | ⭐ | ✅ |
+| 04 | [Repose Record](https://adventofcode.com/2018/day/4) | ⭐ | ⭐ | ✅ |
+| 05 | [Alchemical Reduction](https://adventofcode.com/2018/day/5) | ⭐ | ⭐ | ✅ |
+| 06 | [Chronal Coordinates](https://adventofcode.com/2018/day/6) | ⭐ | ⭐ | ✅ |
+| 07 | [The Sum of Its Parts](https://adventofcode.com/2018/day/7) | ⭐ | ⭐ | ✅ |
+| 08 | [Memory Maneuver](https://adventofcode.com/2018/day/8) | ⭐ | ⭐ | ✅ |
+| 09 | [Marble Mania](https://adventofcode.com/2018/day/9) | ⭐ | ⭐ | ✅ |
+| 10 | [The Stars Align](https://adventofcode.com/2018/day/10) | ⭐ | ⭐ | ✅ |
+| 11 | [Chronal Charge](https://adventofcode.com/2018/day/11) | ⭐ | ⭐ | ✅ |
+| 12 | [Subterranean Sustainability](https://adventofcode.com/2018/day/12) | ⭐ | ⭐ | ✅ |
+| 13 | [Mine Cart Madness](https://adventofcode.com/2018/day/13) | ⭐ | ⭐ | ✅ |
+| 14 | [Chocolate Charts](https://adventofcode.com/2018/day/14) | ⭐ | ⭐ | ✅ |
+| 15 | [Beverage Bandits](https://adventofcode.com/2018/day/15) | ⭐ | ⭐ | ✅ |
+| 16 | [Chronal Classification](https://adventofcode.com/2018/day/16) | ⭐ | ⭐ | ✅ |
+| 17 | [Reservoir Research](https://adventofcode.com/2018/day/17) | ⭐ | ⭐ | ✅ |
+| 18 | [Settlers of The North Pole](https://adventofcode.com/2018/day/18) | ⭐ | ⭐ | ✅ |
+| 19 | [Go With The Flow](https://adventofcode.com/2018/day/19) | ⭐ | ⭐ | ✅ |
+| 20 | [A Regular Map](https://adventofcode.com/2018/day/20) | ⭐ | ⭐ | ✅ |
+| 21 | [Chronal Conversion](https://adventofcode.com/2018/day/21) | ⭐ | ⭐ | ❓ |
+| 22 | [Mode Maze](https://adventofcode.com/2018/day/22) | ⭐ | ⭐ | ✅ |
+| 23 | [Experimental Emergency Teleportation](https://adventofcode.com/2018/day/23) | ⭐ | ⭐ | ✅ |
+| 24 | [Immune System Simulator 20XX](https://adventofcode.com/2018/day/24) | ⭐ | ⭐ | ✅ |
+| 25 | [Four-Dimensional Adventure](https://adventofcode.com/2018/day/25) | ⭐ | ⭐ | ✅ |
+
+## Notable Solutions
+
+### Day 15 — Beverage Bandits
+
+One of the most demanding puzzles of 2018: a full combat simulation between Elves and Goblins on a cave grid. Units take turns in reading order (top-to-bottom, left-to-right), each moving one step toward the nearest reachable enemy (BFS with tie-breaking) and then attacking the adjacent enemy with the lowest hit points. Part 2 binary-searches for the minimum Elf attack power that lets the Elves win without any casualties. The solution uses a `MoveNode` tree to reconstruct movement paths from BFS.
+
+### Day 11 — Chronal Charge
+
+Part 1 finds the 3×3 sub-grid with the highest total power level by brute-force summation. Part 2 asks for the best sub-grid of any size from 1×1 to 300×300. The efficient solution uses a **summed-area table** (prefix sums) so that any rectangular region's sum can be computed in O(1), reducing the full search from O(n⁵) to O(n³).
+
+### Day 18 — Settlers of The North Pole
+
+A classic cellular automaton on a grid of open ground (`.`), trees (`|`), and lumberyards (`#`). Each cell's next state depends on its eight neighbours. Part 1 runs 10 minutes. Part 2 runs 1,000,000,000 minutes — solved by detecting the cycle length in the sequence of states and skipping ahead, then running just the remaining steps.
+
+<Note>
+  Puzzle inputs are personal and are not stored in this repository. Solutions fetch input at runtime using [aocd](https://github.com/wimglenn/advent-of-code-data) (`aocd.data`).
+</Note>

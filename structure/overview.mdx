@@ -1,0 +1,188 @@
+---
+title: "Repository and Solution Module Structure"
+sidebarTitle: "Overview"
+description: "How the aoc_cj Python package is organized: one subdirectory per year, one module per day, and the part_1/part_2 function convention used across all solutions."
+---
+
+The `aoc_cj` package lives under `src/aoc_cj/` and follows a simple, consistent layout: one subpackage per Advent of Code year (e.g. `aoc2015/` through `aoc2025/`), one module per day inside each year subpackage, and a shared `util/` subpackage of reusable helpers. A top-level `__init__.py` exposes a single `solve()` dispatcher function that is registered as the `adventofcode.user` entry point consumed by the [`aocd`](https://github.com/wimglenn/advent-of-code-data) test runner.
+
+## Directory Layout
+
+The full source tree looks like this:
+
+```text
+src/aoc_cj/
+├── __init__.py          # solve() entry point + Answer type + logging setup
+├── py.typed             # PEP 561 marker (package ships inline types)
+├── util/                # Shared utilities
+│   ├── __init__.py      # adj_4, adj_8, ints, floats, digits, is_prime, …
+│   ├── _point.py        # Point3D frozen dataclass
+│   └── _priority_queue.py  # PriorityQueue[T] generic min-heap
+├── aoc2015/
+│   ├── __init__.py
+│   ├── day01.py
+│   └── ...
+├── aoc2016/
+│   └── ...
+│   (one subpackage per year, 2015 – 2025)
+└── aoc2024/
+    ├── __init__.py
+    └── day01.py ...
+```
+
+Test modules mirror the source tree and use the naming convention `y{year}d{day:02d}_test.py`:
+
+```text
+tests/
+├── aoc2015/
+│   ├── y2015d01_test.py
+│   └── y2015d02_test.py
+└── aoc2024/
+    ├── y2024d01_test.py
+    └── y2024d02_test.py
+```
+
+<Note>
+  The `py.typed` marker file tells type checkers (mypy, pyright, etc.) that
+  `aoc_cj` ships its own inline type annotations. The project runs mypy in
+  strict mode, so all public functions are fully typed.
+</Note>
+
+## Per-Day Module Convention
+
+Every day module inside a year subpackage follows the same interface:
+
+- **`part_1(txt: str) -> int | str | None`** — returns the solution for Part 1, or `None` if not yet implemented.
+- **`part_2(txt: str) -> int | str | None`** — returns the solution for Part 2, or `None` if not yet implemented.
+- **Optional helpers** — a `parse()` function (or similar) that is used internally by both parts.
+- **`if __name__ == '__main__':` block** — reads live puzzle input from `aocd.data` and prints both answers.
+
+Here is a representative example from [2024 Day 1](https://adventofcode.com/2024/day/1):
+
+```python
+# src/aoc_cj/aoc2024/day01.py
+import collections
+
+
+def parse(txt: str) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    ints_by_line = (tuple(int(x) for x in line.split()) for line in txt.splitlines())
+    transpose: zip[tuple[int, ...]] = zip(*ints_by_line)
+    tup = tuple(transpose)
+    assert len(tup) == 2
+    return tup
+
+
+def part_1(txt: str) -> int:
+    left_col, right_col = parse(txt)
+    return sum(abs(l - r) for l, r in zip(sorted(left_col), sorted(right_col)))
+
+
+def part_2(txt: str) -> int:
+    left_col, right_col = parse(txt)
+    right_counts = collections.Counter(right_col)
+    return sum(l * right_counts[l] for l in left_col)
+
+
+if __name__ == "__main__":
+    import aocd
+
+    print(f"part_1: {part_1(aocd.data)}")
+    print(f"part_2: {part_2(aocd.data)}")
+```
+
+<Tip>
+  The `parse()` helper is a common pattern: it converts the raw puzzle input
+  string into a structured Python object once, and both `part_1` and `part_2`
+  call it independently. This avoids duplicating string-processing logic and
+  keeps the solution functions easy to read.
+</Tip>
+
+## The `solve()` Dispatcher
+
+The `solve()` function in `src/aoc_cj/__init__.py` is the central entry point for the whole package. It dynamically imports the correct day module and calls `part_1` / `part_2` via the internal `_solve_part()` helper:
+
+```python
+# src/aoc_cj/__init__.py
+
+Answer = int | str | None
+Part = Literal[1, 2]
+
+
+def solve(year: int, day: int, data: str) -> tuple[Answer, Answer]:  # pragma: no cover
+    ans_1: Answer = None
+    ans_2: Answer = None
+
+    module_name = f"{__name__}.aoc{year}.day{day:02d}"
+    try:
+        module = importlib.import_module(module_name)
+
+        ans_1 = _solve_part(module, data, 1)
+        ans_2 = _solve_part(module, data, 2)
+    except ModuleNotFoundError as e:
+        raise NotImplementedError(f"module '{module_name}' not found") from e
+    except Exception as e:
+        logging.exception("exception thrown while solving year=%s day=%s", year, day)
+        raise e
+    finally:
+        logging.info(
+            "result for year=%s day=%s: (part_1: %s, part_2: %s)",
+            year, day, ans_1, ans_2,
+        )
+
+    return ans_1, ans_2
+```
+
+The entry point is registered in `pyproject.toml` under the `adventofcode.user` group:
+
+```toml
+[project.entry-points."adventofcode.user"]
+cj81499 = "aoc_cj:solve"
+```
+
+This is what `aocd`'s test runner discovers when it looks up solutions for the `cj81499` user. Calling `solve(2024, 1, puzzle_input)` resolves to importing `aoc_cj.aoc2024.day01` and running both part functions.
+
+<Note>
+  If the day module does not exist, `solve()` raises `NotImplementedError`
+  rather than returning `(None, None)`. If a part function exists but raises
+  `NotImplementedError` itself (an unfinished stub), `_solve_part()` catches it
+  and returns `None` gracefully.
+</Note>
+
+## Answer Type
+
+```python
+Answer = int | str | None
+```
+
+Every solution function must return a value that satisfies the `Answer` type alias. The three possibilities are:
+
+| Return value | Meaning |
+|---|---|
+| `int` | Numeric puzzle answer (most common) |
+| `str` | String puzzle answer |
+| `None` | Part is not yet implemented, or the function raised `NotImplementedError` |
+
+`_solve_part()` enforces this at runtime with an assertion, so returning an unexpected type (e.g. a list or float) will cause an `AssertionError` rather than silently producing a wrong answer.
+
+## Logging
+
+`aoc_cj` configures Python's standard `logging` module at import time to write all messages at `DEBUG` level and above to a rotating log file:
+
+```python
+LOGS_DIR = PROJECT_ROOT / "logs"
+LOGS_DIR.mkdir(exist_ok=True)
+
+logging.basicConfig(
+    filename=LOGS_DIR / "aoc_cj.log",
+    level=logging.DEBUG,
+    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+)
+```
+
+Every call to `solve()` emits an `INFO`-level log entry recording the year, day, and both answers (even if an exception was raised — the `finally` block always fires). Unhandled exceptions are additionally logged at `ERROR` level via `logging.exception()`, giving a full traceback in the log file.
+
+<Tip>
+  The `logs/` directory is created automatically on first import, so you do not
+  need to create it manually. Check `logs/aoc_cj.log` when debugging an
+  unexpected `None` or exception from `solve()`.
+</Tip>

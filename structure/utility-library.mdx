@@ -1,0 +1,353 @@
+---
+title: "aoc_cj.util: Shared Utilities for Puzzle Solutions"
+sidebarTitle: "Utility Library"
+description: "Reference for all public exports from aoc_cj.util: grid adjacency helpers, regex-based input parsers, is_prime, Point3D, and the generic PriorityQueue."
+---
+
+The `aoc_cj.util` subpackage is a small but focused shared library that appears throughout the yearly solution modules. It exports helpers that address the patterns that recur most often in Advent of Code puzzles: navigating 2D and 3D grids, extracting numbers from messy input strings, checking primality, and running priority-queue (Dijkstra-style) searches. Rather than re-implementing these from scratch in each day module, solutions import them from `aoc_cj.util` to keep day files concise and readable.
+
+## Importing
+
+You can import the namespace object or pull in individual names:
+
+```python
+# Import the whole util namespace
+from aoc_cj import util
+
+util.adj_4(pos)
+util.ints(txt)
+
+# Or import individual helpers directly
+from aoc_cj.util import adj_4, adj_8, ints, positive_ints, is_prime, PriorityQueue, Point3D
+```
+
+<Tip>
+  Solution modules that use many util functions typically use
+  `from aoc_cj import util` and write `util.adj_4(...)`, which makes call sites
+  self-documenting without cluttering the module's top-level namespace.
+</Tip>
+
+## Grid Helpers
+
+AoC grid problems are frequently solved by representing the grid as a `dict[complex, T]`, where the real part of the key is the column (x) and the imaginary part is the row (y). For example, the cell at column 3, row 2 is the complex number `3 + 2j`. This representation makes direction arithmetic trivial: moving east is `+1`, west is `-1`, north is `-1j`, south is `+1j`.
+
+### `adj_4(p: complex) -> Generator[complex]`
+
+Yields the four cardinal neighbors (west, east, north, south) of a complex grid point.
+
+```python
+# src/aoc_cj/util/__init__.py
+def adj_4(p: complex) -> Generator[complex]:
+    for delta in (-1, 1, -1j, 1j):
+        yield p + delta
+```
+
+### `adj_8(p: complex) -> Generator[complex]`
+
+Yields all eight neighbors of `p`, including the four diagonals.
+
+```python
+def adj_8(p: complex) -> Generator[complex]:
+    for delta in (-1 - 1j, -1j, 1 - 1j, -1, 1, -1 + 1j, 1j, 1 + 1j):
+        yield p + delta
+```
+
+**Real-world usage** — the [2024 Day 16 (Reindeer Maze)](https://adventofcode.com/2024/day/16) solution uses `adj_4` to enumerate valid next positions during the BFS walk:
+
+```python
+# src/aoc_cj/aoc2024/day16.py
+def next(self, valid_pos: Callable[[complex], bool]) -> Generator[tuple[Self, int]]:
+    for new_pos in util.adj_4(self.pos):
+        if valid_pos(new_pos):
+            new_facing = Facing(new_pos - self.pos)
+            turned = new_facing != self.facing
+            cost_increase = (1000 if turned else 0) + 1
+            yield cls(pos=new_pos, facing=new_facing), cost_increase
+```
+
+The same file also shows the standard grid-parsing idiom:
+
+```python
+# Build the grid dict from puzzle input
+grid = {
+    x + y * 1j: c
+    for y, row in enumerate(txt.splitlines())
+    for x, c in enumerate(row)
+    if c != "."
+}
+```
+
+<Note>
+  `adj_4` and `adj_8` return generators, not lists. Wrap with `list()` if you
+  need to iterate more than once, but in most search loops a single-pass
+  generator is exactly what you want.
+</Note>
+
+## Input Parsers
+
+Puzzle inputs frequently embed numbers inside longer strings of prose or structured text. `aoc_cj.util` provides several `create_regex_parser`-generated helpers that extract those numbers in a single call.
+
+### `create_regex_parser(pattern, converter) -> Callable`
+
+A factory function that creates a parser by compiling a regex pattern and mapping a converter function over every match. All the built-in parsers below are created with this factory:
+
+```python
+def create_regex_parser[T](
+    p: str | re.Pattern[str],
+    f: Callable[[str], T],
+) -> Callable[[str], Generator[T]]:
+    def regex_parse_fn(s: str) -> Generator[T]:
+        yield from map(f, re.findall(p, s))
+    return regex_parse_fn
+```
+
+### `ints(s: str) -> Generator[int]`
+
+Extracts all integers — including negative numbers — from `s` using the pattern `r'-?\d+'`.
+
+```python
+ints = create_regex_parser(r"-?\d+", int)
+```
+
+```python
+from aoc_cj.util import ints
+
+list(ints("Position: 3, -7 and 42"))   # [3, -7, 42]
+list(ints("move 5 steps, then -3"))    # [5, -3]
+```
+
+### `positive_ints(s: str) -> Generator[int]`
+
+Extracts only non-negative integers (no leading minus sign) using `r'\d+'`.
+
+```python
+positive_ints = create_regex_parser(r"\d+", int)
+```
+
+### `digits(s: str) -> Generator[int]`
+
+Extracts individual digits (0–9) one character at a time.
+
+```python
+digits = create_regex_parser(r"\d", int)
+
+list(digits("abc123def"))  # [1, 2, 3]
+```
+
+### `floats(s: str) -> Generator[float]`
+
+Extracts decimal floating-point numbers (e.g. `3.14`, `-2.5`) using `r'-?\d+\.\d+'`.
+
+```python
+floats = create_regex_parser(r"-?\d+\.\d+", float)
+
+list(floats("velocity: -1.5, 3.0"))  # [-1.5, 3.0]
+```
+
+### `parse_range(r: str) -> range`
+
+Parses a `"start-stop"` string (inclusive on both ends) into a Python `range`. Uses `positive_ints` internally.
+
+```python
+def parse_range(r: str) -> range:
+    start, stop = positive_ints(r)
+    return range(start, stop + 1)
+
+list(parse_range("3-7"))   # [3, 4, 5, 6, 7]
+list(parse_range("10-12")) # [10, 11, 12]
+```
+
+<Note>
+  `parse_range` returns an **inclusive** range: `"3-7"` maps to
+  `range(3, 8)` so that `7 in parse_range("3-7")` is `True`. This matches the
+  convention used in most AoC range-overlap puzzles.
+</Note>
+
+## Math Helpers
+
+### `clamp(n: int, min_n: int, max_n: int) -> int`
+
+Clamps `n` to the closed interval `[min_n, max_n]`. Asserts that `min_n <= max_n`.
+
+```python
+def clamp(n: int, min_n: int, max_n: int) -> int:
+    assert min_n <= max_n
+    return max(min_n, min(n, max_n))
+
+clamp(5,  0, 10)  # 5   – within range, returned unchanged
+clamp(-3, 0, 10)  # 0   – below min, clamped up
+clamp(15, 0, 10)  # 10  – above max, clamped down
+```
+
+### `is_prime(n: int) -> bool`
+
+Trial-division primality test. Returns `True` if and only if `n` is a prime number.
+
+```python
+def is_prime(n: int) -> bool:
+    """
+    Check if n is prime
+
+    A positive integer that is greater than 1 and is not divisible without
+    a remainder by any positive integer other than itself and 1 is prime.
+    """
+    if n < 2:
+        return False
+    if n in (2, 3):
+        return True
+    if n % 2 == 0 or n % 3 == 0:
+        return False
+    # all primes > 3 are of the form 6n +/- 1
+    for f in range(5, math.ceil(math.sqrt(n)) + 1, 6):
+        if n % f == 0 or n % (f + 2) == 0:
+            return False
+    return True
+```
+
+The algorithm uses the standard `6k ± 1` optimization: after ruling out multiples of 2 and 3, it only tests divisors of the form `6k − 1` and `6k + 1` up to `√n`, giving O(√n / 3) trial divisions.
+
+## Point3D
+
+`Point3D`, defined in `util/_point.py`, is a frozen dataclass for three-dimensional integer coordinates. It is useful for 3D grid puzzles like [2022 Day 18](https://adventofcode.com/2022/day/18) (lava droplet surface area).
+
+```python
+# src/aoc_cj/util/_point.py
+import dataclasses
+import re
+from collections.abc import Generator
+
+@dataclasses.dataclass(frozen=True)
+class Point3D:
+    x: int
+    y: int
+    z: int
+
+    PARSE_REGEX = re.compile(r"(\d+)\D+(\d+)\D+(\d+)")
+
+    @staticmethod
+    def parse(point3d: str) -> "Point3D":
+        m = Point3D.PARSE_REGEX.match(point3d)
+        assert m is not None
+        x, y, z = map(int, m.groups())
+        return Point3D(x, y, z)
+
+    def adj(self) -> Generator["Point3D"]:
+        yield Point3D(self.x + 1, self.y, self.z)
+        yield Point3D(self.x - 1, self.y, self.z)
+        yield Point3D(self.x, self.y + 1, self.z)
+        yield Point3D(self.x, self.y - 1, self.z)
+        yield Point3D(self.x, self.y, self.z + 1)
+        yield Point3D(self.x, self.y, self.z - 1)
+```
+
+### Key members
+
+| Member | Description |
+|---|---|
+| `Point3D(x, y, z)` | Construct a point directly. Frozen — immutable and hashable. |
+| `Point3D.parse(s)` | Parse any string containing three integers, separated by any non-digit characters (e.g. `"1,2,3"` or `"x=1 y=2 z=3"`). |
+| `point.adj()` | Generator of the 6 face-adjacent neighbors (±x, ±y, ±z). |
+
+```python
+from aoc_cj.util import Point3D
+
+p = Point3D.parse("1,2,3")    # Point3D(x=1, y=2, z=3)
+list(p.adj())
+# [Point3D(2,2,3), Point3D(0,2,3),
+#  Point3D(1,3,3), Point3D(1,1,3),
+#  Point3D(1,2,4), Point3D(1,2,2)]
+```
+
+<Note>
+  Because `Point3D` is `frozen=True`, instances are hashable and can be used
+  directly as keys in a `dict` or elements of a `set` — the natural
+  representation for 3D grids.
+</Note>
+
+## PriorityQueue[T]
+
+`PriorityQueue`, defined in `util/_priority_queue.py`, is a generic min-heap wrapper around Python's `heapq` module. It avoids the need to push raw tuples and manually unpack them, and it works cleanly with items that are not themselves orderable (since priority is tracked separately).
+
+```python
+# src/aoc_cj/util/_priority_queue.py
+import dataclasses, heapq
+
+@dataclasses.dataclass(order=True)
+class _PrioritizedItem[T]:
+    priority: int
+    item: T = dataclasses.field(compare=False)
+
+class PriorityQueue[T]:
+    def __init__(self) -> None:
+        self._repr: list[_PrioritizedItem[T]] = []
+
+    def __len__(self) -> int:
+        return len(self._repr)
+
+    def push(self, priority: int, item: T) -> None:
+        heapq.heappush(self._repr, _PrioritizedItem(priority, item))
+
+    def pop(self) -> T:
+        return self.pop_with_priority()[0]
+
+    def pop_with_priority(self) -> tuple[T, int]:
+        res = heapq.heappop(self._repr)
+        return res.item, res.priority
+```
+
+### Methods
+
+| Method | Signature | Description |
+|---|---|---|
+| `__init__` | `() -> None` | Create an empty priority queue. |
+| `push` | `(priority: int, item: T) -> None` | Push `item` with the given integer priority. |
+| `pop` | `() -> T` | Pop and return the item with the **lowest** priority value. |
+| `pop_with_priority` | `() -> tuple[T, int]` | Pop and return `(item, priority)` together. |
+| `__len__` | `() -> int` | Number of items currently in the queue. |
+
+### Usage example
+
+```python
+from aoc_cj.util import PriorityQueue
+
+pq: PriorityQueue[str] = PriorityQueue()
+pq.push(10, "low priority")
+pq.push(1,  "high priority")
+pq.push(5,  "medium priority")
+
+print(len(pq))        # 3
+item = pq.pop()       # "high priority"  (priority 1 is smallest)
+item, cost = pq.pop_with_priority()  # ("medium priority", 5)
+```
+
+<Tip>
+  Use `PriorityQueue` anywhere you would reach for Dijkstra's algorithm or A\*.
+  The `item` field accepts any type — frozen dataclasses (like `Point3D` or the
+  `_State` dataclass in day16) are a natural fit because they are hashable and
+  carry all relevant state.
+</Tip>
+
+## Public API Summary
+
+The following names are exported from `aoc_cj.util` (listed in `__all__`):
+
+| Export | Type | Description |
+|---|---|---|
+| `adj_4` | `(complex) -> Generator[complex]` | 4 cardinal neighbors of a complex grid point |
+| `adj_8` | `(complex) -> Generator[complex]` | 8 neighbors (cardinal + diagonal) of a complex grid point |
+| `clamp` | `(int, int, int) -> int` | Clamp a value to `[min_n, max_n]` |
+| `create_regex_parser` | `(pattern, converter) -> Callable` | Factory that builds a regex-based parser |
+| `digits` | `(str) -> Generator[int]` | Extract individual digits from a string |
+| `floats` | `(str) -> Generator[float]` | Extract decimal floating-point numbers from a string |
+| `ints` | `(str) -> Generator[int]` | Extract all integers (including negative) from a string |
+| `positive_ints` | `(str) -> Generator[int]` | Extract non-negative integers from a string |
+| `is_prime` | `(int) -> bool` | Trial-division primality test |
+| `parse_range` | `(str) -> range` | Parse `"start-stop"` into an inclusive `range` |
+| `Point3D` | `dataclass` | Frozen 3D integer coordinate with `.parse()` and `.adj()` |
+| `PriorityQueue[T]` | `class` | Generic integer-priority min-heap |
+
+<Note>
+  `positive_ints` and `parse_range` are used throughout the codebase but are
+  not listed in `__all__`. They are still importable directly:
+  `from aoc_cj.util import positive_ints, parse_range`.
+</Note>

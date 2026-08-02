@@ -1,0 +1,117 @@
+---
+title: "Development Environment Setup for AoC Solutions"
+sidebarTitle: "Setup"
+description: "Install uv, sync the project dependencies, configure your Advent of Code session token, and set up pre-commit hooks for the aoc_cj repository."
+---
+
+The `aoc-cj` repository uses a modern, minimal Python toolchain: **Python 3.13+** as the language runtime, **uv** for virtual-environment creation and dependency management, and **pre-commit** for automated code-quality hooks that run before every commit. Understanding these three tools is enough to get a fully working local environment in under two minutes.
+
+## Prerequisites
+
+Before you begin, make sure the following are available on your machine:
+
+- **Python 3.13 or newer** — the project's `pyproject.toml` sets `requires-python = ">=3.13"`.
+- **uv** — Astral's fast Python package and project manager. uv will automatically create and manage the virtual environment for you.
+- **git** — for cloning the repository and for pre-commit's hook integration.
+
+## Installing uv
+
+If you don't already have uv, install it with the official installer script:
+
+```bash title="Install uv"
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Once installed, uv handles everything else — it creates `.venv`, pins the Python version, and resolves the lockfile without any extra commands from you. You never need to manually activate a virtual environment; `uv run <command>` always executes inside the correct environment.
+
+## Cloning & Syncing
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash title="Clone"
+    git clone https://github.com/cj81499/advent-of-code.git
+    cd advent-of-code
+    ```
+  </Step>
+
+  <Step title="Install all dependencies">
+    ```bash title="Sync dependencies"
+    uv sync
+    ```
+
+    `uv sync` installs the project itself along with every package listed under `[dependency-groups] dev` in `pyproject.toml`:
+
+    | Package | Purpose |
+    |---|---|
+    | `mypy` | Static type checking |
+    | `pytest` | Test runner |
+    | `pytest-cov` | Coverage reporting |
+    | `pytest-watcher` | File-watch re-runner |
+    | `ruff` | Formatter and linter |
+    | `pre-commit` | Git hook manager |
+    | `tombi` | TOML formatter and linter |
+    | `types-networkx`, `types-shapely` | Stub packages for type checking |
+
+    <Note>
+      `uv sync` is optional as a manual step — running `uv run <any-command>` will automatically sync the environment if it is out of date.
+    </Note>
+  </Step>
+
+  <Step title="Configure the AoC session token">
+    See the [Configuring the AOC Session Token](#configuring-the-aoc-session-token) section below.
+  </Step>
+
+  <Step title="Install pre-commit hooks">
+    ```bash title="Install hooks"
+    uv run pre-commit install
+    ```
+  </Step>
+</Steps>
+
+## Configuring the AOC Session Token
+
+The `aocd` library (Advent of Code Data) fetches your personal puzzle inputs from the AoC website. It needs your browser session cookie to authenticate. Store it in:
+
+```
+~/.config/aocd/token
+```
+
+The easiest way to populate that file is to let `aocd` scrape the token directly from your browser's cookie storage:
+
+```bash title="Scrape session token from browser"
+uv run --with browser-cookie3 aocd-token
+```
+
+This command runs temporarily with the `browser-cookie3` package added (without permanently adding it to the project) and writes your session token to the expected location.
+
+<Warning>
+  Without a valid session token, any test that fetches real puzzle input from the AoC servers will fail. Tests that rely only on the hard-coded `EXAMPLE_INPUT` strings inside the test files will continue to work regardless.
+</Warning>
+
+## Pre-commit Hooks
+
+Once `uv run pre-commit install` has been run, the following hooks execute automatically on every `git commit`:
+
+| Hook | Source | What it does |
+|---|---|---|
+| `ruff-check` | `astral-sh/ruff-pre-commit` | Lints Python files and auto-fixes safe issues (`--fix`) |
+| `ruff-format` | `astral-sh/ruff-pre-commit` | Formats Python files in-place |
+| `uv-lock` | `astral-sh/uv-pre-commit` | Ensures `uv.lock` is up to date |
+| `end-of-file-fixer` | `pre-commit/pre-commit-hooks` | Adds a trailing newline to every file |
+| `check-yaml` | `pre-commit/pre-commit-hooks` | Validates YAML syntax |
+| `check-added-large-files` | `pre-commit/pre-commit-hooks` | Prevents accidentally committing large files |
+| `markdownlint-cli2` | `DavidAnson/markdownlint-cli2` | Lints Markdown files |
+
+The config also opts in to _all_ git hook types (`commit-msg`, `pre-push`, `post-checkout`, etc.) via `default_install_hook_types`, so hooks can fire at the most appropriate point in the git lifecycle.
+
+<Tip>
+  You can run all hooks against every file at any time — without making a commit — using:
+
+  ```bash title="Run all hooks manually"
+  uv run pre-commit run --all-files
+  ```
+</Tip>
+
+## VS Code
+
+The repository ships a `.vscode/` directory with editor settings pre-configured for this project. If you open the repository root in VS Code, the workspace settings and recommended extensions will be picked up automatically.

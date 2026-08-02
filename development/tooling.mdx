@@ -1,0 +1,183 @@
+---
+title: "Linting, Type Checking, and CI for AoC Solutions"
+sidebarTitle: "Tooling"
+description: "Understand the Ruff formatter and linter, mypy strict type checking, tombi TOML linting, and the GitHub Actions CI workflow that runs on every push."
+---
+
+The `aoc-cj` repository enforces a consistent quality bar through a layered stack of automated tools: **Ruff** handles Python formatting and linting, **mypy** provides strict static type checking, **tombi** keeps TOML files well-formatted and valid, **pre-commit** runs these tools locally before every commit, and **GitHub Actions** ties everything together in CI on every push and pull request.
+
+## Ruff
+
+[Ruff](https://docs.astral.sh/ruff/) serves double duty as both the project's formatter and linter. It is significantly faster than the tools it replaces (Black, isort, pyflakes, etc.) and is configured once in `pyproject.toml`.
+
+### Formatter
+
+Ruff's formatter enforces a consistent Python code style with a line length of **120 characters**:
+
+```toml title="pyproject.toml"
+[tool.ruff]
+line-length = 120
+output-format = "grouped"
+src = ["src"]
+```
+
+### Linter
+
+The following rule sets are enabled:
+
+| Code | Rule set | Description |
+|---|---|---|
+| `F401` | Pyflakes (subset) | Flag unused imports |
+| `W` | pycodestyle warnings | Style warnings (e.g. whitespace issues) |
+| `I` | isort | Import ordering |
+| `UP` | pyupgrade | Modernise syntax for the target Python version |
+| `ERA` | eradicate | Detect commented-out code |
+| `RUF` | Ruff-specific | Ruff's own opinionated rules |
+
+<CodeGroup>
+```bash title="Lint"
+uv run ruff check .
+```
+
+```bash title="Format check (CI mode)"
+uv run ruff format --check .
+```
+
+```bash title="Format in-place"
+uv run ruff format .
+```
+</CodeGroup>
+
+<Tip>
+  In pre-commit, `ruff-check` is run with `--fix` to automatically apply safe fixes before the commit is recorded.
+</Tip>
+
+## mypy
+
+mypy is configured in **strict mode**, meaning the full set of strictness flags is active. In addition to the built-in strict bundle, several extra error codes are enabled explicitly:
+
+```toml title="pyproject.toml (selected settings)"
+[tool.mypy]
+strict = true
+disallow_any_unimported = true
+disallow_any_decorated = true
+disallow_any_generics = true
+warn_return_any = true
+warn_unreachable = true
+enable_error_code = [
+  "redundant-self",
+  "redundant-expr",
+  "possibly-undefined",
+  "truthy-bool",
+  "truthy-iterable",
+  "ignore-without-code",
+  "unused-awaitable",
+  "unused-ignore",
+  "explicit-override",
+  "unimported-reveal",
+]
+```
+
+### Year exclusions
+
+Solutions from 2017 through 2021 pre-date the project's adoption of strict typing and are excluded from mypy's analysis to avoid a large backlog of pre-existing errors:
+
+```toml title="pyproject.toml"
+[tool.mypy]
+exclude = [
+  '^tests\/aoc2017\/',
+  '^src\/aoc_cj\/aoc2017\/',
+  '^tests\/aoc2018\/',
+  '^src\/aoc_cj\/aoc2018\/',
+  '^tests\/aoc2019\/',
+  '^src\/aoc_cj\/aoc2019\/',
+  '^tests\/aoc2020\/',
+  '^src\/aoc_cj\/aoc2020\/',
+  '^tests\/aoc2021\/',
+]
+```
+
+### aocd override
+
+`aocd` does not ship type stubs, so its imports are silenced with a targeted override rather than disabling checks globally:
+
+```toml title="pyproject.toml"
+[[tool.mypy.overrides]]
+# aocd doesn't provide types https://github.com/wimglenn/advent-of-code-data/issues/78
+module = ["aocd"]
+ignore_missing_imports = true
+```
+
+```bash title="Run mypy"
+uv run mypy .
+```
+
+## tombi
+
+[tombi](https://tombi-toml.github.io/tombi/) formats and lints TOML files (including `pyproject.toml` itself) to keep them consistently styled and schema-valid.
+
+<CodeGroup>
+```bash title="Format check"
+uv run tombi format --check
+```
+
+```bash title="Lint"
+uv run tombi lint
+```
+</CodeGroup>
+
+## GitHub Actions CI
+
+The `python-package.yaml` workflow runs on every push to `main`, every pull request, and every merge queue entry. It is composed of three jobs.
+
+### `build` job
+
+Runs on a matrix of **Python 3.13** and **Python 3.14** (`ubuntu-latest`). The steps execute in order:
+
+| Step | Command |
+|---|---|
+| Sanity-check Python version | `uv run --frozen python --version` |
+| Format check (Ruff) | `uv run --frozen ruff format --check .` |
+| Format check (tombi) | `uv run --frozen tombi format --check` |
+| Lint Python (Ruff) | `uv run --frozen ruff check --output-format=github .` |
+| Lint TOML (tombi) | `uv run --frozen tombi lint` |
+| Type check (mypy) | `uv run --frozen mypy .` |
+| Run tests with coverage | `uv run --frozen pytest --cov=. --cov-report=xml` |
+| Upload coverage | `codecov/codecov-action` → Codecov |
+
+All commands use `--frozen` to ensure the lockfile is not modified during CI.
+
+<Note>
+  The workflow defaults to `permissions: contents: none` at the top level and grants `contents: read` only to the `build` job, following the principle of least privilege.
+</Note>
+
+### `zizmor` job
+
+A separate job runs [zizmor](https://woodruffw.github.io/zizmor/) — a static analyser that scans GitHub Actions workflow files for security issues such as script injection vulnerabilities, overly broad permissions, and unsafe use of untrusted inputs.
+
+```yaml title=".github/workflows/python-package.yaml (zizmor step)"
+- name: Run zizmor 🌈
+  run: uvx zizmor --persona=auditor --format=sarif . > results.sarif
+  env:
+    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+The results are output in [SARIF](https://sarifweb.azurewebsites.net/) format and uploaded to GitHub's code-scanning dashboard via `github/codeql-action/upload-sarif`, where findings appear as security alerts on the repository.
+
+### `check` job
+
+A final `check` job always runs (regardless of whether `build` or `zizmor` succeeded or failed) and uses [`re-actors/alls-green`](https://github.com/re-actors/alls-green) to fail the overall workflow if any upstream job did not succeed. This gives pull requests a single required status check to gate on rather than requiring each individual job to be listed.
+
+```yaml title=".github/workflows/python-package.yaml (check job)"
+check:
+  name: Check if all jobs succeeded
+  if: always()
+  needs:
+    - build
+    - zizmor
+  steps:
+    - name: Check if all jobs succeeded
+      uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # v1.2.2
+      with:
+        jobs: "${{ toJSON(needs) }}"
+```

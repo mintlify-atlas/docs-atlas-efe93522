@@ -1,0 +1,78 @@
+---
+title: "Advent of Code 2015 Solutions"
+sidebarTitle: "2015"
+description: "Python solutions for Advent of Code 2015 by cj81499, covering all 25 days with tested, type-checked implementations."
+---
+
+Advent of Code 2015 is a complete year — **all 25 days solved**, both parts. As the very first AoC event, 2015 established many of the series' signature puzzle styles: navigating infinite grids, mining MD5 hashes, simulating circuit logic, parsing JSON, and running simple virtual machines. Every solution carries a passing test suite; Day 16 ("Aunt Sue") has a question-mark on its test status because the answer depends on recognising specific input values. The entire year was solved retrospectively, with all submissions arriving long after the original competition.
+
+## Progress
+
+| Day | Title | Part 1 | Part 2 | Tests |
+|:---:|-------|:------:|:------:|:-----:|
+| 01 | [Not Quite Lisp](https://adventofcode.com/2015/day/1) | ⭐ | ⭐ | ✅ |
+| 02 | [I Was Told There Would Be No Math](https://adventofcode.com/2015/day/2) | ⭐ | ⭐ | ✅ |
+| 03 | [Perfectly Spherical Houses in a Vacuum](https://adventofcode.com/2015/day/3) | ⭐ | ⭐ | ✅ |
+| 04 | [The Ideal Stocking Stuffer](https://adventofcode.com/2015/day/4) | ⭐ | ⭐ | ✅ |
+| 05 | [Doesn't He Have Intern-Elves For This?](https://adventofcode.com/2015/day/5) | ⭐ | ⭐ | ✅ |
+| 06 | [Probably a Fire Hazard](https://adventofcode.com/2015/day/6) | ⭐ | ⭐ | ✅ |
+| 07 | [Some Assembly Required](https://adventofcode.com/2015/day/7) | ⭐ | ⭐ | ✅ |
+| 08 | [Matchsticks](https://adventofcode.com/2015/day/8) | ⭐ | ⭐ | ✅ |
+| 09 | [All in a Single Night](https://adventofcode.com/2015/day/9) | ⭐ | ⭐ | ✅ |
+| 10 | [Elves Look, Elves Say](https://adventofcode.com/2015/day/10) | ⭐ | ⭐ | ✅ |
+| 11 | [Corporate Policy](https://adventofcode.com/2015/day/11) | ⭐ | ⭐ | ✅ |
+| 12 | [JSAbacusFramework.io](https://adventofcode.com/2015/day/12) | ⭐ | ⭐ | ✅ |
+| 13 | [Knights of the Dinner Table](https://adventofcode.com/2015/day/13) | ⭐ | ⭐ | ✅ |
+| 14 | [Reindeer Olympics](https://adventofcode.com/2015/day/14) | ⭐ | ⭐ | ✅ |
+| 15 | [Science for Hungry People](https://adventofcode.com/2015/day/15) | ⭐ | ⭐ | ✅ |
+| 16 | [Aunt Sue](https://adventofcode.com/2015/day/16) | ⭐ | ⭐ | ❓ |
+| 17 | [No Such Thing as Too Much](https://adventofcode.com/2015/day/17) | ⭐ | ⭐ | ✅ |
+| 18 | [Like a GIF For Your Yard](https://adventofcode.com/2015/day/18) | ⭐ | ⭐ | ✅ |
+| 19 | [Medicine for Rudolph](https://adventofcode.com/2015/day/19) | ⭐ | ⭐ | ✅ |
+| 20 | [Infinite Elves and Infinite Houses](https://adventofcode.com/2015/day/20) | ⭐ | ⭐ | ✅ |
+| 21 | [RPG Simulator 20XX](https://adventofcode.com/2015/day/21) | ⭐ | ⭐ | ✅ |
+| 22 | [Wizard Simulator 20XX](https://adventofcode.com/2015/day/22) | ⭐ | ⭐ | ✅ |
+| 23 | [Opening the Turing Lock](https://adventofcode.com/2015/day/23) | ⭐ | ⭐ | ✅ |
+| 24 | [It Hangs in the Balance](https://adventofcode.com/2015/day/24) | ⭐ | ⭐ | ✅ |
+| 25 | [Let It Snow](https://adventofcode.com/2015/day/25) | ⭐ | ⭐ | ✅ |
+
+## Notable Solutions
+
+### Day 4 — The Ideal Stocking Stuffer (MD5 Mining)
+
+A brute-force MD5 hash search: find the lowest positive integer that, when appended to the puzzle input, produces a hex digest starting with five (Part 1) or six (Part 2) zeroes. The solution uses Python's `hashlib.md5` with `itertools.count` to iterate over candidates and returns the first match.
+
+```python
+def find_hash(secret_key: str, zeros: int = 5) -> int:
+    zeros_str = "0" * zeros
+    return next(
+        i for i in itertools.count()
+        if hashlib.md5(f"{secret_key}{i}".encode()).hexdigest().startswith(zeros_str)
+    )
+```
+
+### Day 7 — Some Assembly Required (Logic Gates)
+
+The wire network is parsed into a `dict[str, str]` mapping each wire name to its definition expression. A recursive `signal_on` function evaluates any wire by parsing its expression — handling `AND`, `OR`, `LSHIFT`, `RSHIFT`, `NOT`, literals, and wire references. Results are memoised with `@functools.cache` (using an immutable `frozendict` as the circuit argument) to avoid redundant recomputation. Part 2 overrides wire `b` with Part 1's answer and re-evaluates.
+
+```python
+@functools.cache
+def _signal_on(wire: str, wires: Mapping[str, str]) -> int:
+    val = wires[wire]
+    if val.isnumeric():
+        return int(val)
+    lhs, op, rhs = val.split()
+    if op == "AND":
+        return signal_on(lhs, wires) & signal_on(rhs, wires)
+    if op == "OR":
+        return signal_on(lhs, wires) | signal_on(rhs, wires)
+    # ... LSHIFT, RSHIFT, NOT
+```
+
+### Day 3 — Perfectly Spherical Houses in a Vacuum
+
+Santa follows a sequence of `^v<>` movement instructions on an infinite grid, delivering presents to every house he visits. Part 1 tracks Santa's single path with a `set` of visited coordinates. Part 2 splits the instruction stream between Santa and Robo-Santa using `itertools.islice` with a step of 2, then unions the two visited sets.
+
+<Note>
+  Puzzle inputs are personal and are not stored in this repository. Solutions fetch input at runtime using [aocd](https://github.com/wimglenn/advent-of-code-data) (`aocd.data`).
+</Note>

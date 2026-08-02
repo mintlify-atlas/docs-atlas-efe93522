@@ -1,0 +1,103 @@
+---
+title: "Advent of Code 2022 Solutions"
+sidebarTitle: "2022"
+description: "Python solutions for Advent of Code 2022 by cj81499, with 23 days solved and tests covering a range of algorithmic problem types."
+---
+
+Advent of Code 2022 was a productive year for cj81499, with **23 days** having
+at least Part 1 solved and the majority of those earning both stars. Notable
+gaps are Day 19 (Not Enough Minerals — unsolved) and the Part 2s of Days 16,
+17, and 22. Every solved day includes a corresponding test suite. The puzzles
+range from classic graph-search and simulation problems to number-theory tricks,
+expression trees, and blizzard-dodging pathfinding.
+
+<Note>
+  Puzzle inputs are personal and are not included in the repository. To run
+  these solutions you will need to supply your own input, for example via
+  [aocd](https://github.com/wimglenn/advent-of-code-data). See
+  [Solution Structure](/structure/overview) for how the project is organised.
+</Note>
+
+## Progress
+
+| Day | Title | Part 1 | Part 2 | Tests |
+|:---:|-------|:------:|:------:|:-----:|
+| 01 | [Calorie Counting](https://adventofcode.com/2022/day/1) | ⭐ | ⭐ | ✅ |
+| 02 | [Rock Paper Scissors](https://adventofcode.com/2022/day/2) | ⭐ | ⭐ | ✅ |
+| 03 | [Rucksack Reorganization](https://adventofcode.com/2022/day/3) | ⭐ | ⭐ | ✅ |
+| 04 | [Camp Cleanup](https://adventofcode.com/2022/day/4) | ⭐ | ⭐ | ✅ |
+| 05 | [Supply Stacks](https://adventofcode.com/2022/day/5) | ⭐ | ⭐ | ✅ |
+| 06 | [Tuning Trouble](https://adventofcode.com/2022/day/6) | ⭐ | ⭐ | ✅ |
+| 07 | [No Space Left On Device](https://adventofcode.com/2022/day/7) | ⭐ | ⭐ | ✅ |
+| 08 | [Treetop Tree House](https://adventofcode.com/2022/day/8) | ⭐ | ⭐ | ✅ |
+| 09 | [Rope Bridge](https://adventofcode.com/2022/day/9) | ⭐ | ⭐ | ✅ |
+| 10 | [Cathode-Ray Tube](https://adventofcode.com/2022/day/10) | ⭐ | ⭐ | ✅ |
+| 11 | [Monkey in the Middle](https://adventofcode.com/2022/day/11) | ⭐ | ⭐ | ✅ |
+| 12 | [Hill Climbing Algorithm](https://adventofcode.com/2022/day/12) | ⭐ | ⭐ | ✅ |
+| 13 | [Distress Signal](https://adventofcode.com/2022/day/13) | ⭐ | ⭐ | ✅ |
+| 14 | [Regolith Reservoir](https://adventofcode.com/2022/day/14) | ⭐ | ⭐ | ✅ |
+| 15 | [Beacon Exclusion Zone](https://adventofcode.com/2022/day/15) | ⭐ | ⭐ | ✅ |
+| 16 | [Proboscidea Volcanium](https://adventofcode.com/2022/day/16) | ⭐ | ✗ | ✗ |
+| 17 | [Pyroclastic Flow](https://adventofcode.com/2022/day/17) | ⭐ | ✗ | ✅ |
+| 18 | [Boiling Boulders](https://adventofcode.com/2022/day/18) | ⭐ | ⭐ | ✅ |
+| 19 | [Not Enough Minerals](https://adventofcode.com/2022/day/19) | ✗ | ✗ | ✗ |
+| 20 | [Grove Positioning System](https://adventofcode.com/2022/day/20) | ⭐ | ⭐ | ✅ |
+| 21 | [Monkey Math](https://adventofcode.com/2022/day/21) | ⭐ | ⭐ | ✅ |
+| 22 | [Monkey Map](https://adventofcode.com/2022/day/22) | ⭐ | ✗ | ✅ |
+| 23 | [Unstable Diffusion](https://adventofcode.com/2022/day/23) | ⭐ | ⭐ | ✅ |
+| 24 | [Blizzard Basin](https://adventofcode.com/2022/day/24) | ⭐ | ⭐ | ✅ |
+| 25 | [Full of Hot Air](https://adventofcode.com/2022/day/25) | ⭐ | ✗ | ✅ |
+
+## Notable Solutions
+
+### Day 12 — Hill Climbing Algorithm
+
+**Part 1** finds the shortest path from the marked start `S` to the end `E`
+across a height-map grid where each step may only climb at most one elevation
+unit. A BFS from `S` records the cost to reach every cell; the answer is the
+BFS distance recorded for `E`.
+
+**Part 2** asks for the shortest path from *any* ground-level cell (`a` or `S`)
+to `E`. Rather than running a separate BFS from every possible starting point,
+the solution simply **reverses the search direction**: it starts the BFS at `E`
+and relaxes the movement constraint accordingly (now a step can only *descend*
+at most one unit). The first ground-level cell reached by this reverse BFS gives
+the global optimum in a single pass.
+
+---
+
+### Day 21 — Monkey Math
+
+**Part 1** evaluates a tree of monkey expressions where each monkey either holds
+a literal integer or applies an arithmetic operator to the values of two other
+monkeys. Lazy resolution (each `UnresolvedMonkey` caches its resolved form on
+first access) means the full expression tree is evaluated in one recursive pass.
+
+**Part 2** changes the root monkey's job to an *equality check* and asks what
+value the `humn` monkey must have to satisfy it. The solution avoids symbolic
+algebra by walking the expression tree twice: first it determines which subtree
+contains the `humn` node, then it propagates a *target* value back down that
+subtree, inverting each arithmetic operation along the way (add ↔ subtract,
+multiply ↔ divide, with correct handling of non-commutative subtraction). No
+external solver is needed — the tree structure guarantees a unique path from
+root to `humn`.
+
+---
+
+### Day 24 — Blizzard Basin
+
+The valley is filled with blizzards that move and wrap around each minute,
+making the navigable cells time-dependent. The solution simulates the blizzard
+grid incrementally using `functools.cache`: `grid_after(t)` is computed from
+`grid_after(t-1)`, so each unique minute is only simulated once even across
+multiple traversals.
+
+Pathfinding uses a min-heap (Dijkstra-style) where each state is `(time, pos)`.
+At each step the candidate can wait in place or move in any of the four cardinal
+directions, provided the destination cell is empty at the next time step.
+
+**Part 2** requires three legs — start → goal, goal → start (the elf forgot
+their snacks), then start → goal again — by re-running the same `explore`
+function with the arrival time of one leg as the departure time of the next. The
+cached blizzard simulation is shared across all three legs, so previously
+computed grid states are reused for free.

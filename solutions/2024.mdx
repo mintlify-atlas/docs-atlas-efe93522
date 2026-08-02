@@ -1,0 +1,156 @@
+---
+title: "Advent of Code 2024 Solutions"
+sidebarTitle: "2024"
+description: "Python solutions for Advent of Code 2024 by cj81499, with 22 days solved, personal leaderboard results, and pytest-verified example inputs."
+---
+
+Advent of Code 2024 is a strong year in this repository, with **22 of 25 days** fully solved (Days 17, 21, and 24 are still outstanding). The event features competitive leaderboard finishes — including a top-750 finish on Day 13 and top-600 on Day 8 Part 2 — and solutions that draw on a rich algorithmic toolkit: BFS with directional state, linear algebra for constraint solving, sliding-window sequence matching, and more. All solved days include pytest-verified example inputs.
+
+<Note>
+  Puzzle inputs are personal and are **not** included in the repository. To run
+  solutions against your own input, use
+  [`aocd`](https://github.com/wimglenn/advent-of-code-data) after setting your
+  session cookie. See the [Solution Structure](/structure/overview) page for
+  full setup instructions.
+</Note>
+
+## Progress Table
+
+| Day | Title | Part 1 | Part 2 | Tests |
+| :-: | ----- | :----: | :----: | :---: |
+| 01 | [Historian Hysteria](https://adventofcode.com/2024/day/1) | ⭐ | ⭐ | ✅ |
+| 02 | [Red-Nosed Reports](https://adventofcode.com/2024/day/2) | ⭐ | ⭐ | ✅ |
+| 03 | [Mull It Over](https://adventofcode.com/2024/day/3) | ⭐ | ⭐ | ✅ |
+| 04 | [Ceres Search](https://adventofcode.com/2024/day/4) | ⭐ | ⭐ | ✅ |
+| 05 | [Print Queue](https://adventofcode.com/2024/day/5) | ⭐ | ⭐ | ✅ |
+| 06 | [Guard Gallivant](https://adventofcode.com/2024/day/6) | ⭐ | ⭐ | ✅ |
+| 07 | [Bridge Repair](https://adventofcode.com/2024/day/7) | ⭐ | ⭐ | ✅ |
+| 08 | [Resonant Collinearity](https://adventofcode.com/2024/day/8) | ⭐ | ⭐ | ✅ |
+| 09 | [Disk Fragmenter](https://adventofcode.com/2024/day/9) | ⭐ | ⭐ | ✅ |
+| 10 | [Hoof It](https://adventofcode.com/2024/day/10) | ⭐ | ⭐ | ✅ |
+| 11 | [Plutonian Pebbles](https://adventofcode.com/2024/day/11) | ⭐ | ⭐ | ✅ |
+| 12 | [Garden Groups](https://adventofcode.com/2024/day/12) | ⭐ | ⭐ | ✅ |
+| 13 | [Claw Contraption](https://adventofcode.com/2024/day/13) | ⭐ | ⭐ | ✅ |
+| 14 | [Restroom Redoubt](https://adventofcode.com/2024/day/14) | ⭐ | ⭐ | ✅ |
+| 15 | [Warehouse Woes](https://adventofcode.com/2024/day/15) | ⭐ | ⭐ | ✅ |
+| 16 | [Reindeer Maze](https://adventofcode.com/2024/day/16) | ⭐ | ⭐ | ✅ |
+| 17 | [Chronospatial Computer](https://adventofcode.com/2024/day/17) | ❓ | ❓ | ❓ |
+| 18 | [RAM Run](https://adventofcode.com/2024/day/18) | ⭐ | ⭐ | ✅ |
+| 19 | [Linen Layout](https://adventofcode.com/2024/day/19) | ⭐ | ⭐ | ✅ |
+| 20 | [Race Condition](https://adventofcode.com/2024/day/20) | ⭐ | ⭐ | ✅ |
+| 21 | [Keypad Conundrum](https://adventofcode.com/2024/day/21) | ❓ | ❓ | ❓ |
+| 22 | [Monkey Market](https://adventofcode.com/2024/day/22) | ⭐ | ⭐ | ✅ |
+| 23 | [LAN Party](https://adventofcode.com/2024/day/23) | ⭐ | ⭐ | ✅ |
+| 24 | [Crossed Wires](https://adventofcode.com/2024/day/24) | ❓ | ❓ | ❓ |
+| 25 | [Code Chronicle](https://adventofcode.com/2024/day/25) | ⭐ | ❓ | ✅ |
+
+## Personal Leaderboard
+
+Times are relative to puzzle unlock (midnight EST). The `Rank` and `Score` columns come directly from the AoC personal leaderboard.
+
+```text
+      --------Part 1--------   --------Part 2--------
+Day       Time   Rank  Score       Time   Rank  Score
+ 25   00:14:03   1363      0          -      -      -
+ 23   00:12:48   1409      0   01:02:24   2715      0
+ 22   00:10:48   1511      0   00:37:45   1195      0
+ 20   00:39:15   2009      0   00:56:24   1258      0
+ 19   00:10:57   1444      0   00:14:34   1129      0
+ 18   00:20:57   2438      0   00:26:54   2052      0
+ 16   01:06:42   4058      0   01:52:17   3208      0
+ 15   00:56:48   4717      0   20:32:43  20377      0
+ 14   13:37:54  27290      0   13:47:27  22823      0
+ 13   00:11:11    750      0   00:20:33    504      0
+ 12   00:37:11   4294      0   01:21:30   2844      0
+ 11   00:08:36   1763      0   00:31:36   2520      0
+ 10   00:21:52   3382      0   00:23:51   2781      0
+  9   00:26:04   3077      0   00:59:19   2493      0
+  8   00:11:47   1009      0   00:14:19    580      0
+  7   18:15:03  47649      0   18:22:53  44704      0
+  6   00:10:06   1176      0   00:28:05   1424      0
+  5   00:14:00   2415      0   00:28:36   2838      0
+  4   00:16:22   3173      0   00:24:33   2475      0
+  3   00:02:58    510      0   00:06:14    381      0
+  2   00:07:34   1464      0   00:38:53   5970      0
+  1   00:02:56    735      0   00:04:23    552      0
+```
+
+## Notable Solutions
+
+### Day 13 — Claw Contraption
+
+The Claw Contraption puzzle asks how many tokens are needed to align a claw machine to a prize by pressing two buttons (A and B), each moving the claw by fixed `(x, y)` offsets, with A costing 3 tokens and B costing 1.
+
+This is a **system of two linear equations** with two unknowns (button-press counts `a` and `b`):
+
+```
+px = ax * a + bx * b
+py = ay * a + by * b
+```
+
+The primary solution uses direct linear algebra: compute the determinant of the coefficient matrix and solve via Cramer's rule. If the resulting `a` and `b` are non-integers, there is no valid solution for that machine. Part 2 shifts the prize coordinate by `10_000_000_000_000`, making a brute-force approach completely infeasible and confirming that the analytical approach is the right one.
+
+```python
+def cheapest_way_to_win_lin_alg(self, off_by: int = 0) -> int | None:
+    px, py = self.prize
+    px += off_by
+    py += off_by
+    ax, ay = self.a
+    bx, by = self.b
+
+    det = ax * by - ay * bx
+    if det == 0:
+        return 0
+
+    a_float = (px * by - bx * py) / det
+    b_float = (ax * py - ay * px) / det
+
+    if (a := int(a_float)) != a_float or (b := int(b_float)) != b_float:
+        return 0
+
+    return 3 * a + b
+```
+
+The file also includes an alternative Z3 constraint-optimization solution (`cheapest_way_to_win`) as a point of comparison — though it is marked `# pragma: no cover` in production use.
+
+---
+
+### Day 16 — Reindeer Maze
+
+The Reindeer Maze is a shortest-path problem with a twist: turning costs 1000 tokens, while a single forward step costs 1. The solution models the state as `(position, facing)` using complex numbers for the grid and a `Facing` enum for direction.
+
+Part 1 runs a **BFS with cost tracking** (analogous to Dijkstra's algorithm), propagating `(cost, state)` pairs and keeping the cheapest known cost per state. Turning is detected by comparing the new facing to the old one and adding 1000 to the cost if they differ.
+
+```python
+def next(self, valid_pos: Callable[[complex], bool]) -> Generator[tuple[Self, int]]:
+    for new_pos in util.adj_4(self.pos):
+        if valid_pos(new_pos):
+            new_facing = Facing(new_pos - self.pos)
+            turned = new_facing != self.facing
+            cost_increase = (1000 if turned else 0) + 1
+            yield cls(pos=new_pos, facing=new_facing), cost_increase
+```
+
+Part 2 counts the **total number of distinct tiles** that lie on *any* minimum-cost path from start to end. The solution augments each cheapest-state tracker with the set of positions visited on the way there, merging sets when ties are found at equal cost.
+
+---
+
+### Day 22 — Monkey Market
+
+Monkey Market involves a pseudorandom secret generator: each step XORs and masks the current secret three times to produce the next value. Part 1 simply applies 2000 iterations of the generator for each buyer and sums the results.
+
+Part 2 is more complex: each buyer sells bananas when they see a specific **4-step price-change sequence** for the first time. The goal is to find the sequence that maximises the total bananas purchased across all buyers. The solution uses `itertools.islice` and `more_itertools.sliding_window` to extract every 5-element window from the first 2000 secrets, converts them to price deltas, and builds a lookup table with `dict.setdefault` to record only the *first* sale price per buyer per sequence. The winning sequence is found by summing over all buyers.
+
+```python
+def part_2(txt: str) -> int:
+    price_for_changes = defaultdict[PriceChanges, dict[Secret, Price]](dict)
+    for initial_secret in map(int, txt.splitlines()):
+        gen = secret_generator(initial_secret)
+        first_2000_secrets = itertools.islice(gen, 2000)
+        for secrets in mi.sliding_window(first_2000_secrets, 5):
+            prices = tuple(s % 10 for s in secrets)
+            sale_price = prices[-1]
+            price_changes = tuple(b - a for a, b in itertools.pairwise(prices))
+            price_for_changes[price_changes].setdefault(initial_secret, sale_price)
+    return max(sum(prices.values()) for prices in price_for_changes.values())
+```

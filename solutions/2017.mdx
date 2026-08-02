@@ -1,0 +1,67 @@
+---
+title: "Advent of Code 2017 Solutions"
+sidebarTitle: "2017"
+description: "Python solutions for Advent of Code 2017 by cj81499, covering all 25 days with tested, type-checked implementations."
+---
+
+Advent of Code 2017 is a complete year — **all 25 days solved**, both parts. The year has a playful computer-science theme: from circular buffers and hash functions to a Turing machine finale. Standout puzzles include the reusable **Knot Hash** algorithm (Days 10 and 14), the **Spinlock** circular buffer (Day 17), the **Duet** dual-program VM (Day 18), and the recursive tower balancing puzzle (Day 7). All solutions carry tests; Day 23 has a question-mark on its test status due to input-dependent behaviour.
+
+## Progress
+
+| Day | Title | Part 1 | Part 2 | Tests |
+|:---:|-------|:------:|:------:|:-----:|
+| 01 | [Inverse Captcha](https://adventofcode.com/2017/day/1) | ⭐ | ⭐ | ✅ |
+| 02 | [Corruption Checksum](https://adventofcode.com/2017/day/2) | ⭐ | ⭐ | ✅ |
+| 03 | [Spiral Memory](https://adventofcode.com/2017/day/3) | ⭐ | ⭐ | ✅ |
+| 04 | [High-Entropy Passphrases](https://adventofcode.com/2017/day/4) | ⭐ | ⭐ | ✅ |
+| 05 | [A Maze of Twisty Trampolines, All Alike](https://adventofcode.com/2017/day/5) | ⭐ | ⭐ | ✅ |
+| 06 | [Memory Reallocation](https://adventofcode.com/2017/day/6) | ⭐ | ⭐ | ✅ |
+| 07 | [Recursive Circus](https://adventofcode.com/2017/day/7) | ⭐ | ⭐ | ✅ |
+| 08 | [I Heard You Like Registers](https://adventofcode.com/2017/day/8) | ⭐ | ⭐ | ✅ |
+| 09 | [Stream Processing](https://adventofcode.com/2017/day/9) | ⭐ | ⭐ | ✅ |
+| 10 | [Knot Hash](https://adventofcode.com/2017/day/10) | ⭐ | ⭐ | ✅ |
+| 11 | [Hex Ed](https://adventofcode.com/2017/day/11) | ⭐ | ⭐ | ✅ |
+| 12 | [Digital Plumber](https://adventofcode.com/2017/day/12) | ⭐ | ⭐ | ✅ |
+| 13 | [Packet Scanners](https://adventofcode.com/2017/day/13) | ⭐ | ⭐ | ✅ |
+| 14 | [Disk Defragmentation](https://adventofcode.com/2017/day/14) | ⭐ | ⭐ | ✅ |
+| 15 | [Dueling Generators](https://adventofcode.com/2017/day/15) | ⭐ | ⭐ | ✅ |
+| 16 | [Permutation Promenade](https://adventofcode.com/2017/day/16) | ⭐ | ⭐ | ✅ |
+| 17 | [Spinlock](https://adventofcode.com/2017/day/17) | ⭐ | ⭐ | ✅ |
+| 18 | [Duet](https://adventofcode.com/2017/day/18) | ⭐ | ⭐ | ✅ |
+| 19 | [A Series of Tubes](https://adventofcode.com/2017/day/19) | ⭐ | ⭐ | ✅ |
+| 20 | [Particle Swarm](https://adventofcode.com/2017/day/20) | ⭐ | ⭐ | ✅ |
+| 21 | [Fractal Art](https://adventofcode.com/2017/day/21) | ⭐ | ⭐ | ✅ |
+| 22 | [Sporifica Virus](https://adventofcode.com/2017/day/22) | ⭐ | ⭐ | ✅ |
+| 23 | [Coprocessor Conflagration](https://adventofcode.com/2017/day/23) | ⭐ | ⭐ | ❓ |
+| 24 | [Electromagnetic Moat](https://adventofcode.com/2017/day/24) | ⭐ | ⭐ | ✅ |
+| 25 | [The Halting Problem](https://adventofcode.com/2017/day/25) | ⭐ | ⭐ | ✅ |
+
+## Notable Solutions
+
+### Day 10 — Knot Hash
+
+The Knot Hash is a custom hash algorithm used as a primitive in both Day 10 and Day 14. Part 1 is a single round of in-place circular-list reversal. Part 2 implements the full hash: the input string is converted to ASCII codes, a fixed suffix `[17, 31, 73, 47, 23]` is appended, and 64 rounds of reversal are run. The 256-byte sparse hash is condensed to a 16-byte dense hash by XOR-ing each 16-element chunk, then hex-encoded.
+
+```python
+def knot_hash(txt: str) -> str:
+    ascii_codes = list(map(ord, txt))
+    lengths = [*ascii_codes, *SUFFIX]
+    nums = [*range(DEFAULT_LIST_SIZE)]
+    pos = skip_size = 0
+    for _ in range(64):
+        pos, skip_size = do_round(nums, lengths, pos=pos, skip_size=skip_size)
+    sparse_hash = tuple(nums)
+    return dense_hash(sparse_hash)
+```
+
+### Day 7 — Recursive Circus
+
+Part 1 finds the root of a weighted tree by identifying the one program that is never listed as a child. Part 2 detects the single unbalanced node — the one whose subtree weight differs from all its siblings — and computes what its weight should be. The solution walks the tree recursively, propagating subtree weights upward.
+
+### Day 18 — Duet
+
+Part 1 interprets a register-based assembly language where the `snd` instruction plays a "sound" and `rcv` recovers it. Part 2 reinterprets `snd`/`rcv` as message-passing channels between two programs running concurrently. The two `Program` instances share queues and alternate execution until both are blocked, then the number of values sent by Program 1 is the answer.
+
+<Note>
+  Puzzle inputs are personal and are not stored in this repository. Solutions fetch input at runtime using [aocd](https://github.com/wimglenn/advent-of-code-data) (`aocd.data`).
+</Note>

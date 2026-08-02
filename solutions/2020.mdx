@@ -1,0 +1,68 @@
+---
+title: "Advent of Code 2020 Solutions"
+sidebarTitle: "2020"
+description: "Python solutions for Advent of Code 2020 by cj81499, covering all 25 days with tested, type-checked implementations."
+---
+
+Advent of Code 2020 is a complete year — **all 25 days solved**, both parts, with tests passing for every puzzle. The year's theme follows a tropical vacation disrupted by global chaos, featuring puzzles centred on passport validation, bag rules, cellular automata, and even a sea-monster hunt inside a jigsaw of image tiles. Day 1 earned a top-100 score on the global leaderboard (38 points for Part 1).
+
+## Progress
+
+| Day | Title | Part 1 | Part 2 | Tests |
+|:---:|-------|:------:|:------:|:-----:|
+| 01 | [Report Repair](https://adventofcode.com/2020/day/1) | ⭐ | ⭐ | ✅ |
+| 02 | [Password Philosophy](https://adventofcode.com/2020/day/2) | ⭐ | ⭐ | ✅ |
+| 03 | [Toboggan Trajectory](https://adventofcode.com/2020/day/3) | ⭐ | ⭐ | ✅ |
+| 04 | [Passport Processing](https://adventofcode.com/2020/day/4) | ⭐ | ⭐ | ✅ |
+| 05 | [Binary Boarding](https://adventofcode.com/2020/day/5) | ⭐ | ⭐ | ✅ |
+| 06 | [Custom Customs](https://adventofcode.com/2020/day/6) | ⭐ | ⭐ | ✅ |
+| 07 | [Handy Haversacks](https://adventofcode.com/2020/day/7) | ⭐ | ⭐ | ✅ |
+| 08 | [Handheld Halting](https://adventofcode.com/2020/day/8) | ⭐ | ⭐ | ✅ |
+| 09 | [Encoding Error](https://adventofcode.com/2020/day/9) | ⭐ | ⭐ | ✅ |
+| 10 | [Adapter Array](https://adventofcode.com/2020/day/10) | ⭐ | ⭐ | ✅ |
+| 11 | [Seating System](https://adventofcode.com/2020/day/11) | ⭐ | ⭐ | ✅ |
+| 12 | [Rain Risk](https://adventofcode.com/2020/day/12) | ⭐ | ⭐ | ✅ |
+| 13 | [Shuttle Search](https://adventofcode.com/2020/day/13) | ⭐ | ⭐ | ✅ |
+| 14 | [Docking Data](https://adventofcode.com/2020/day/14) | ⭐ | ⭐ | ✅ |
+| 15 | [Rambunctious Recitation](https://adventofcode.com/2020/day/15) | ⭐ | ⭐ | ✅ |
+| 16 | [Ticket Translation](https://adventofcode.com/2020/day/16) | ⭐ | ⭐ | ✅ |
+| 17 | [Conway Cubes](https://adventofcode.com/2020/day/17) | ⭐ | ⭐ | ✅ |
+| 18 | [Operation Order](https://adventofcode.com/2020/day/18) | ⭐ | ⭐ | ✅ |
+| 19 | [Monster Messages](https://adventofcode.com/2020/day/19) | ⭐ | ⭐ | ✅ |
+| 20 | [Jurassic Jigsaw](https://adventofcode.com/2020/day/20) | ⭐ | ⭐ | ✅ |
+| 21 | [Allergen Assessment](https://adventofcode.com/2020/day/21) | ⭐ | ⭐ | ✅ |
+| 22 | [Crab Combat](https://adventofcode.com/2020/day/22) | ⭐ | ⭐ | ✅ |
+| 23 | [Crab Cups](https://adventofcode.com/2020/day/23) | ⭐ | ⭐ | ✅ |
+| 24 | [Lobby Layout](https://adventofcode.com/2020/day/24) | ⭐ | ⭐ | ✅ |
+| 25 | [Combo Breaker](https://adventofcode.com/2020/day/25) | ⭐ | ⭐ | ✅ |
+
+## Notable Solutions
+
+### Day 4 — Passport Processing
+
+Part 1 checks that all required fields (`byr`, `iyr`, `eyr`, `hgt`, `hcl`, `ecl`, `pid`) are present. Part 2 adds strict validation: birth year must be a 4-digit number in `[1920, 2002]`, height must be in the correct range for `cm` or `in` units, hair colour must match `#rrggbb`, and so on. Each rule is handled by an explicit `if` branch, making the validation logic easy to audit.
+
+### Day 17 — Conway Cubes
+
+The solution is dimension-agnostic. Active cells are stored in a `set[Point]` where `Point` is a tuple of arbitrary length. A cached `neighbors` function generates all `3^n - 1` neighbours for an n-dimensional point using `itertools.product`. Part 1 runs 3-D Game-of-Life for 6 cycles; Part 2 simply passes `dimensions=4` to the same `solve` function.
+
+```python
+@functools.cache
+def neighbors(p: Point) -> tuple[Point, ...]:
+    return tuple(
+        tuple(x + d for x, d in zip(p, deltas, strict=True))
+        for deltas in itertools.product(*itertools.repeat((-1, 0, 1), len(p)))
+        if any(x != 0 for x in deltas)
+    )
+
+part_1 = solve
+part_2 = functools.partial(solve, dimensions=4)
+```
+
+### Day 20 — Jurassic Jigsaw
+
+Each `Tile` wraps a NumPy array so that rotations and reflections are handled with `np.rot90` and `np.flip`. Tiles are matched edge-to-edge by comparing border strings. Once all tiles are assembled into a grid, the combined image is scanned for the sea-monster pattern using a set of known relative offsets, and the total `#` count minus found sea-monster `#` cells gives the answer.
+
+<Note>
+  Puzzle inputs are personal and are not stored in this repository. Solutions fetch input at runtime using [aocd](https://github.com/wimglenn/advent-of-code-data) (`aocd.data`).
+</Note>

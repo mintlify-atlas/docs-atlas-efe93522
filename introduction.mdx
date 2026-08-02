@@ -1,0 +1,135 @@
+---
+title: "Advent of Code Solutions: 11 Years of Python Puzzles"
+sidebarTitle: "Introduction"
+description: "cj81499's AoC repository holds Python solutions for 2015–2025, a shared utility library, strict type checking, and full test coverage for every solved puzzle."
+---
+
+Cal Jacobson (cj81499) has been competing in [Advent of Code](https://adventofcode.com/) since 2015, accumulating over a decade of Python puzzle solutions in a single, well-maintained repository. What sets this repo apart from a typical solutions dump is its engineering rigour: every solved day is covered by a pytest test suite, all modern code passes strict mypy type checking, Ruff enforces consistent formatting and linting, and a shared `aoc_cj.util` library prevents copy-pasting the same grid or parsing helpers across eleven years' worth of puzzle files.
+
+<CardGroup cols={2}>
+  <Card title="Repository Overview" icon="folder-open" href="#repository-overview">
+    Package layout, year subdirectories, and the `util` subpackage at a glance.
+  </Card>
+  <Card title="Key Features" icon="star" href="#key-features">
+    Type checking, linting, CI matrix, and the test runner integration.
+  </Card>
+  <Card title="Utility Library" icon="wrench" href="#the-solve-entry-point">
+    The `aoc_cj.util` subpackage — shared helpers used across all years.
+  </Card>
+  <Card title="Solutions by Year" icon="calendar" href="#dependencies">
+    2015 through 2025 — eleven consecutive years of puzzle solutions.
+  </Card>
+</CardGroup>
+
+## Repository Overview
+
+The repository is structured as a single installable Python package named **`aoc-cj`**, built with [Hatchling](https://hatch.pypa.io/) and managed by [uv](https://docs.astral.sh/uv/). The source tree lives under `src/` following the standard src-layout convention:
+
+```
+src/
+└── aoc_cj/
+    ├── __init__.py       # top-level solve() entry point
+    ├── py.typed          # PEP 561 marker — package ships inline types
+    ├── util/             # shared utility subpackage
+    │   ├── __init__.py   # adj_4, adj_8, ints, floats, is_prime, …
+    │   ├── _point.py     # Point3D helper
+    │   └── _priority_queue.py
+    ├── aoc2015/          # one subdirectory per year …
+    ├── aoc2016/
+    │   └── …
+    └── aoc2024/
+        ├── day01.py      # each day is a self-contained module
+        ├── day02.py
+        └── …
+```
+
+Each year lives in its own `aoc{YEAR}/` subdirectory; each day is a self-contained module named `day{DD}.py` (zero-padded). This predictable naming is what lets the top-level `solve()` function dynamically import any year/day combination at runtime.
+
+The package registers a `adventofcode.user` entry point in `pyproject.toml`:
+
+```toml
+[project.entry-points."adventofcode.user"]
+cj81499 = "aoc_cj:solve"
+```
+
+This entry point is the hook used by the [`aocd`](https://github.com/wimglenn/advent-of-code-data) test runner. When `aocd` runs cj81499's solutions, it calls `aoc_cj.solve` directly — no special wrappers required.
+
+## Key Features
+
+<CardGroup cols={3}>
+  <Card title="11 Years of Solutions" icon="trophy">
+    Puzzle solutions spanning **2015 through 2025** — every AoC season cj81499 has competed in, all in one repository.
+  </Card>
+  <Card title="Shared Utility Library" icon="toolbox">
+    `aoc_cj.util` exports helpers like `adj_4`, `adj_8`, `ints`, `floats`, `is_prime`, `Point3D`, `PriorityQueue`, and more — reused across all years.
+  </Card>
+  <Card title="Full pytest Test Suite" icon="flask">
+    Every solved puzzle has a corresponding test. Running `uv run pytest` validates all solutions against real puzzle answers via `aocd`.
+  </Card>
+  <Card title="Strict mypy Typing" icon="shield-check">
+    The entire codebase (2021 onwards) runs under `mypy --strict` with additional error codes enabled — no implicit `Any`, no untyped functions.
+  </Card>
+  <Card title="Ruff Linting & Formatting" icon="paintbrush">
+    [Ruff](https://docs.astral.sh/ruff/) handles both formatting and linting in a single fast pass, enforcing import order, upgrade rules, and unused-import detection.
+  </Card>
+  <Card title="GitHub Actions CI" icon="circle-check">
+    Every push is tested on **Python 3.13 and 3.14** via a matrix build. The pipeline runs Ruff, Tombi (TOML linting), mypy, pytest with coverage, and Codecov upload.
+  </Card>
+</CardGroup>
+
+## The `solve()` Entry Point
+
+The heart of the package is the top-level `solve()` function in `src/aoc_cj/__init__.py`. It provides the single interface that `aocd` calls when running solutions:
+
+```python
+def solve(year: int, day: int, data: str) -> tuple[Answer, Answer]:  # pragma: no cover
+    ans_1: Answer = None
+    ans_2: Answer = None
+
+    module_name = f"{__name__}.aoc{year}.day{day:02d}"
+    try:
+        module = importlib.import_module(module_name)
+
+        ans_1 = _solve_part(module, data, 1)
+        ans_2 = _solve_part(module, data, 2)
+    except ModuleNotFoundError as e:
+        raise NotImplementedError(f"module '{module_name}' not found") from e
+    except Exception as e:
+        logging.exception("exception thrown while solving year=%s day=%s", year, day)
+        raise e
+    finally:
+        logging.info("result for year=%s day=%s: (part_1: %s, part_2: %s)", year, day, ans_1, ans_2)
+
+    return ans_1, ans_2
+```
+
+Where `Answer = int | str | None`.
+
+The function works as follows:
+
+1. **Constructs the module name** from the year and zero-padded day number, e.g. `aoc_cj.aoc2024.day01`.
+2. **Dynamically imports** that module with `importlib.import_module`.
+3. **Calls `part_1(data)` and `part_2(data)`** on the imported module via the private `_solve_part` helper, which gracefully handles missing functions and `NotImplementedError` for unsolved parts.
+4. **Logs every result** to `logs/aoc_cj.log` regardless of success or failure.
+5. **Raises `NotImplementedError`** if the module doesn't exist yet, so `aocd` can report the puzzle as unsolved rather than crashing.
+
+<Note>
+  All individual day modules follow the same contract: they must expose a `part_1(txt: str)` function and optionally a `part_2(txt: str)` function. The return value must be an `int`, `str`, or `None`.
+</Note>
+
+## Dependencies
+
+The runtime dependencies reflect the breadth of algorithms AoC puzzles demand over eleven years:
+
+| Package | Purpose |
+|---|---|
+| `advent-of-code-data` | Fetches puzzle input and answers automatically using your session token (`aocd`). |
+| `more-itertools` | Extended iteration utilities beyond the standard `itertools` module. |
+| `networkx` | Graph algorithms — shortest paths, connected components, cycle detection. |
+| `numpy` | Numerical computing and array manipulation for grid-heavy puzzles. |
+| `shapely` | Computational geometry — polygon area, union, and intersection operations. |
+| `z3-solver` | SMT / constraint solver for puzzles that require satisfiability reasoning. |
+| `lark` | PEG/EBNF parser toolkit for puzzles with formal mini-language grammars. |
+| `frozendict` | Immutable dictionary — useful for hashable state in memoised searches. |
+
+Development dependencies (`mypy`, `pytest`, `ruff`, `pre-commit`, `pytest-cov`, `pytest-watcher`, `tombi`) are kept in the `[dependency-groups] dev` section and are never included in the installed package.
