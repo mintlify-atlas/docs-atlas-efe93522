@@ -1,7 +1,7 @@
 ---
-title: "Repository and Solution Module Structure"
+title: "aoc_cj Package Structure: Years, Days, and Entry Point"
 sidebarTitle: "Overview"
-description: "How the aoc_cj Python package is organized: one subdirectory per year, one module per day, and the part_1/part_2 function convention used across all solutions."
+description: "How the aoc_cj Python package is organized: year subpackages, per-day modules, the part_1/part_2 convention, and the solve() dispatcher entry point."
 ---
 
 The `aoc_cj` package lives under `src/aoc_cj/` and follows a simple, consistent layout: one subpackage per Advent of Code year (e.g. `aoc2015/` through `aoc2025/`), one module per day inside each year subpackage, and a shared `util/` subpackage of reusable helpers. A top-level `__init__.py` exposes a single `solve()` dispatcher function that is registered as the `adventofcode.user` entry point consumed by the [`aocd`](https://github.com/wimglenn/advent-of-code-data) test runner.
@@ -74,7 +74,7 @@ def parse(txt: str) -> tuple[tuple[int, ...], tuple[int, ...]]:
 
 def part_1(txt: str) -> int:
     left_col, right_col = parse(txt)
-    return sum(abs(l - r) for l, r in zip(sorted(left_col), sorted(right_col)))
+    return sum(abs(l - r) for l, r in zip(sorted(sorted(left_col)), sorted(sorted(right_col))))
 
 
 def part_2(txt: str) -> int:

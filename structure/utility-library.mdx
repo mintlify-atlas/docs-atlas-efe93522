@@ -1,7 +1,7 @@
 ---
-title: "aoc_cj.util: Shared Utilities for Puzzle Solutions"
+title: "aoc_cj.util: Shared Utility Library for Puzzle Solutions"
 sidebarTitle: "Utility Library"
-description: "Reference for all public exports from aoc_cj.util: grid adjacency helpers, regex-based input parsers, is_prime, Point3D, and the generic PriorityQueue."
+description: "Reference for public exports from aoc_cj.util: grid adjacency helpers, regex parsers, is_prime, clamp, Point3D dataclass, and the generic PriorityQueue."
 ---
 
 The `aoc_cj.util` subpackage is a small but focused shared library that appears throughout the yearly solution modules. It exports helpers that address the patterns that recur most often in Advent of Code puzzles: navigating 2D and 3D grids, extracting numbers from messy input strings, checking primality, and running priority-queue (Dijkstra-style) searches. Rather than re-implementing these from scratch in each day module, solutions import them from `aoc_cj.util` to keep day files concise and readable.
@@ -18,7 +18,7 @@ util.adj_4(pos)
 util.ints(txt)
 
 # Or import individual helpers directly
-from aoc_cj.util import adj_4, adj_8, ints, positive_ints, is_prime, PriorityQueue, Point3D
+from aoc_cj.util import adj_4, adj_8, ints, is_prime, PriorityQueue, Point3D
 ```
 
 <Tip>
@@ -118,7 +118,7 @@ list(ints("move 5 steps, then -3"))    # [5, -3]
 
 ### `positive_ints(s: str) -> Generator[int]`
 
-Extracts only non-negative integers (no leading minus sign) using `r'\d+'`.
+Extracts only non-negative integers (no leading minus sign) using `r'\d+'`. **Not exported in `__all__`** — importable directly as `from aoc_cj.util import positive_ints`.
 
 ```python
 positive_ints = create_regex_parser(r"\d+", int)
@@ -146,7 +146,7 @@ list(floats("velocity: -1.5, 3.0"))  # [-1.5, 3.0]
 
 ### `parse_range(r: str) -> range`
 
-Parses a `"start-stop"` string (inclusive on both ends) into a Python `range`. Uses `positive_ints` internally.
+Parses a `"start-stop"` string (inclusive on both ends) into a Python `range`. Uses `positive_ints` internally. **Not exported in `__all__`** — importable directly as `from aoc_cj.util import parse_range`.
 
 ```python
 def parse_range(r: str) -> range:
@@ -340,9 +340,7 @@ The following names are exported from `aoc_cj.util` (listed in `__all__`):
 | `digits` | `(str) -> Generator[int]` | Extract individual digits from a string |
 | `floats` | `(str) -> Generator[float]` | Extract decimal floating-point numbers from a string |
 | `ints` | `(str) -> Generator[int]` | Extract all integers (including negative) from a string |
-| `positive_ints` | `(str) -> Generator[int]` | Extract non-negative integers from a string |
 | `is_prime` | `(int) -> bool` | Trial-division primality test |
-| `parse_range` | `(str) -> range` | Parse `"start-stop"` into an inclusive `range` |
 | `Point3D` | `dataclass` | Frozen 3D integer coordinate with `.parse()` and `.adj()` |
 | `PriorityQueue[T]` | `class` | Generic integer-priority min-heap |
 

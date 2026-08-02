@@ -94,6 +94,7 @@ exclude = [
   '^tests\/aoc2020\/',
   '^src\/aoc_cj\/aoc2020\/',
   '^tests\/aoc2021\/',
+  '^src\/aoc_cj\/aoc2020\/',
 ]
 ```
 
@@ -136,7 +137,7 @@ Runs on a matrix of **Python 3.13** and **Python 3.14** (`ubuntu-latest`). The s
 
 | Step | Command |
 |---|---|
-| Sanity-check Python version | `uv run --frozen python --version` |
+| Sanity-check Python version | `uv run --frozen python --version --version` |
 | Format check (Ruff) | `uv run --frozen ruff format --check .` |
 | Format check (tombi) | `uv run --frozen tombi format --check` |
 | Lint Python (Ruff) | `uv run --frozen ruff check --output-format=github .` |

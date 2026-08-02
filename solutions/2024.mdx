@@ -1,5 +1,5 @@
 ---
-title: "Advent of Code 2024 Solutions"
+title: "Advent of Code 2024 Solutions by cj81499 — 22 Days"
 sidebarTitle: "2024"
 description: "Python solutions for Advent of Code 2024 by cj81499, with 22 days solved, personal leaderboard results, and pytest-verified example inputs."
 ---
@@ -123,6 +123,7 @@ Part 1 runs a **BFS with cost tracking** (analogous to Dijkstra's algorithm), pr
 
 ```python
 def next(self, valid_pos: Callable[[complex], bool]) -> Generator[tuple[Self, int]]:
+    cls = type(self)
     for new_pos in util.adj_4(self.pos):
         if valid_pos(new_pos):
             new_facing = Facing(new_pos - self.pos)

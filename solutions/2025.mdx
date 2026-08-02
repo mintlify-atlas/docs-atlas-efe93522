@@ -1,7 +1,7 @@
 ---
-title: "Advent of Code 2025 Solutions"
+title: "Advent of Code 2025 Solutions by cj81499 — 12 Days"
 sidebarTitle: "2025"
-description: "Python solutions for Advent of Code 2025 by cj81499, covering 12 days with both parts solved and tested using pytest and aocd."
+description: "Python solutions for Advent of Code 2025 by cj81499, covering 12 days fully solved, with personal leaderboard times and pytest-verified examples."
 ---
 
 Advent of Code 2025 is the most recent event in this repository. As of the current snapshot, **12 days** are covered — all with both parts fully solved — spanning a wide variety of puzzle types including string parsing, column-wise arithmetic, range merging, graph path-counting, and computational geometry.
@@ -78,7 +78,7 @@ def part_2(txt: str) -> int:
 
 ### Day 11 — Reactor
 
-Day 11 presents a directed-graph path-counting problem. Given a device graph where each node has a set of named outputs, Part 1 counts the number of distinct paths from `"you"` to `"out"`. Part 2 adds the requirement that every path must pass through both a `"fft"` node **and** a `"dac"` node before reaching `"out"`. The solution uses `@functools.cache` to memoize recursive path counts, carrying `seen_fft` and `seen_dac` boolean flags through the recursion to avoid redundant re-computation.
+Day 11 presents a directed-graph path-counting problem. Given a device graph where each node has a set of named outputs, Part 1 counts the number of distinct paths from `"you"` to `"out"`. Part 2 adds the requirement that every path must pass through both a `"fft"` node **and** a `"dac"` node before reaching `"out"`. The solution uses `@functools.cache` to memoize recursive path counts, carrying `seen_fft` and `seen_dac` boolean flags through the recursion to avoid redundant re-computation. The Part 2 traversal starts from `"svr"` (the entry node in the actual puzzle input).
 
 ```python
 @functools.cache
@@ -89,4 +89,6 @@ def count_paths(current: str, *, seen_fft: bool, seen_dac: bool) -> int:
     seen_dac = seen_dac or current == "dac"
     f = functools.partial(count_paths, seen_fft=seen_fft, seen_dac=seen_dac)
     return sum(map(f, attached_outputs[current]))
+
+return count_paths("svr", seen_fft=False, seen_dac=False)
 ```
